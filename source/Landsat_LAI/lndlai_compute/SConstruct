@@ -1,0 +1,34 @@
+#!python
+
+import os
+import platform
+import subprocess
+
+AddOption('--prefix',
+          dest='prefix',
+          type='string',
+          nargs=1,
+          action='store',
+          metavar='DIR',
+          help='installation prefix')
+env = Environment(PREFIX = GetOption('prefix'))
+prefix = GetOption('prefix')
+base = os.path.abspath(os.path.join(prefix,os.pardir))
+base = os.path.join(base,'work')
+sourcePath = os.path.join(base,'source')
+binPath = os.path.join(prefix,'bin')
+
+#if not platform.system()=='Linux':
+env.Replace(CC = os.path.join(binPath,'gcc'))
+#else:
+    #env.Replace(CC = 'gcc')
+print ("source: %s" % sourcePath)    
+print ("bin: %s" % binPath) 
+env.Append(CCFLAGS = ['-static'])
+env.Append(LIBPATH = [os.path.join(sourcePath,'lib')])
+env.Append(CPPPATH = [os.path.join(sourcePath,'include')])
+env.Append(LIBS = ['Gctp','hdfeos','mfhdf','df','z','sz','jpeg','m'])
+lndlai_compute=env.Program(target='lndlai_compute', source=['lndlai_util.c','lndlai_rt.c','lndlai_compute.c'])
+env.Install(binPath, lndlai_compute)
+env.Alias('install', binPath)
+Export('env')
