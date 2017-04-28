@@ -10,6 +10,7 @@ Created on Thu Dec  1 13:50:04 2016
 
 #from .search import Search
 import os
+import numpy as np
 import subprocess
 import glob
 import shutil
@@ -76,12 +77,13 @@ def getLandsatData(collection,loc,startDate,endDate,auth,cloud):
         if sceneID.startswith('LC'):
             dataFN = os.path.join(landsatSR,"%s" % sceneID.split('_')[2],"%s_MTL.txt" % sceneID)
             if not os.path.exists(dataFN):
-                if len(orderedData)>0:
-                    if len(orderedData[(orderedData.productID==sceneID) & (orderedData.status=='complete')]['orderid'])>0:
-                        completedOrderedIDs.append(list(orderedData[(orderedData.productID==sceneID) & (orderedData.status=='complete')]['orderid'])[0])
+                if np.sum(orderedData.productID==sceneID)>0:
+                    completedTest = (orderedData.productID==sceneID) & (orderedData.status=='complete')
+                    if len(orderedData[completedTest]['orderid'])>0:
+                        completedOrderedIDs.append(list(orderedData[completedTest]['orderid'])[0])
                         completedSceneIDs.append(sceneID)
                     else:
-                        notCompletedOrderedIDs.append(list(orderedData[(orderedData.productID==sceneID) & (orderedData.status=='oncache')]['orderid'])[-1])
+                        notCompletedOrderedIDs.append(list(orderedData[(completedTest==False)]['orderid'])[-1])
                         notCompletedSceneIDs.append(sceneID)
                 else:
                     l8_tiles.append(sceneID)
