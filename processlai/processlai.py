@@ -403,7 +403,7 @@ def main():
     # find MODIS tiles that cover landsat scene
     # MODIS products   
     product = 'MCD15A3H'
-    version = '005'
+    version = '006'
     [v,h]= latlon2MODtile(args.lat,args.lon)
     tiles = "h%02dv%02d" %(h,v)
     #tiles = 'h10v04,h10v05'
