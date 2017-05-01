@@ -356,7 +356,7 @@ def checkOrderCache(auth):
         dOrder = datetime(year,month,day)
         deltDate = (datetime.now()-dOrder).days
         if deltDate>10:
-            break
+            continue
         resp = api_request('item-status/{0}'.format(orderid))
         ddd = json.loads(json.dumps(resp))
         if not ddd['orderid']['%s' % orderid][0]['status']=='purged':
