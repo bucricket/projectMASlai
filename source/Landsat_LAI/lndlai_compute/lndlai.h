@@ -28,9 +28,9 @@ typedef struct
 {
   int32 nrows;           
   int32 ncols;
-  int32 ulx;              /* x value of up-left corner */
-  int32 uly;              /* y value of up-left corner */
-  int32 res;              /* spatial resolution */
+  float64 ulx;              /* x value of up-left corner */
+  float64 uly;              /* y value of up-left corner */
+  float64 res;              /* spatial resolution */
   int16 path;
   int16 row;
   /*int16 fillValue;*/
