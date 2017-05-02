@@ -206,6 +206,7 @@ def geotiff2envi():
             datFile = fstem+"_%s.%s.dat" % (l8bands[i],bands[i])
             #subprocess.call(["%s" % geotiffConvert ,"%s" % tifFile, "%s" % datFile])
             subprocess.call(["gdal_translate", "-of", "ENVI","%s" % tifFile, "%s" % datFile ])
+            os.rename(datFile,"%s.dat.hdr" % datFile[:-4])
 
 def sample():    
     sample = 'lndlai_sample'
