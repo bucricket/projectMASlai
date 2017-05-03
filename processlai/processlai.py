@@ -77,14 +77,17 @@ def getLandsatData(collection,loc,startDate,endDate,auth,cloud):
         if sceneID.startswith('LC'):
             dataFN = os.path.join(landsatSR,"%s" % sceneID.split('_')[2],"%s_MTL.txt" % sceneID)
             if not os.path.exists(dataFN):
-                if np.sum(orderedData.productID==sceneID)>0:
-                    completedTest = (orderedData.productID==sceneID) & (orderedData.status=='complete')
-                    if len(orderedData[completedTest]['orderid'])>0:
-                        completedOrderedIDs.append(list(orderedData[completedTest]['orderid'])[0])
-                        completedSceneIDs.append(sceneID)
+                if not orderedData.empty:
+                    if np.sum(orderedData.productID==sceneID)>0:
+                        completedTest = (orderedData.productID==sceneID) & (orderedData.status=='complete')
+                        if len(orderedData[completedTest]['orderid'])>0:
+                            completedOrderedIDs.append(list(orderedData[completedTest]['orderid'])[0])
+                            completedSceneIDs.append(sceneID)
+                        else:
+                            notCompletedOrderedIDs.append(list(orderedData[(orderedData.productID==sceneID)]['orderid'])[-1])
+                            notCompletedSceneIDs.append(sceneID)
                     else:
-                        notCompletedOrderedIDs.append(list(orderedData[(orderedData.productID==sceneID)]['orderid'])[-1])
-                        notCompletedSceneIDs.append(sceneID)
+                        l8_tiles.append(sceneID)
                 else:
                     l8_tiles.append(sceneID)
             else:
