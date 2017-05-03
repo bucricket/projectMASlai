@@ -205,7 +205,7 @@ def geotiff2envi():
             tifFile = fn+"_%s.tif" % l8bands[i]
             datFile = fstem+"_%s.%s.dat" % (l8bands[i],bands[i])
             #subprocess.call(["%s" % geotiffConvert ,"%s" % tifFile, "%s" % datFile])
-            subprocess.call(["gdal_translate", "-of", "ENVI","%s" % tifFile, "%s" % datFile ])
+            subprocess.call(["gdal_translate", "-of","-q", "ENVI","%s" % tifFile, "%s" % datFile ])
             os.rename("%s.hdr" % datFile[:-4],"%s.dat.hdr" % datFile[:-4])
 
 def sample():    
@@ -243,7 +243,7 @@ def sample():
         sam_file = os.path.join(laiPath,"SR_LAI.%s.%s.MCD15A3H_A%s%s.txt" %(date,sceneID,year,mdoy))
         
         for i in range(len(modFiles)):  
-            fn = os.path.join(laiPath,"slai%s.inp" % i)
+            fn = os.path.join(laiPath,"slai%d.inp" % i)
             file = open(fn, "w")
             file.write("LANDSAT_BASE_BLUE = %s_%s.%s.dat\n" % (fstem,l8bands[0],bands[0]))
             file.write("LANDSAT_BASE_GREEN = %s_%s.%s.dat\n" % (fstem,l8bands[1],bands[1]))
@@ -258,7 +258,7 @@ def sample():
             file.close()
         
             subprocess.call(["%s" % sample , "%s" % fn])
-            os.remove(os.path.join(laiPath,"slai%s.inp" % i))
+            os.remove(os.path.join(laiPath,"slai%d.inp" % i))
             
 def train():    
     cubist = 'cubist'
