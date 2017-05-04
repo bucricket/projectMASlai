@@ -29,12 +29,13 @@ from .landsatTools import landsat_metadata
 import requests
 from time import sleep
 import logging
+from pymodis.downmodis import downModis
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.DEBUG)
 
 # The current URL hosting the ESPA interfaces has reached a stable version 1.0
 host = 'https://espa.cr.usgs.gov/api/v1/'
-timeout=86400
+TIMEOUT=86400
 
 base = os.getcwd()
 Folders = folders(base)   
@@ -116,15 +117,15 @@ def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
             i+=1
             sceneID = sceneIDs_completed[i]
             complete = False
-            reached_timeout = False
+            reached_TIMEOUT = False
             starttime = datetime.now()
-            while not complete and not reached_timeout:
+            while not complete and not reached_TIMEOUT:
                 resp = api_request('item-status/{0}'.format(orderid))
                 for item in resp['orderid'][orderid]:
                     if item.get('name')==sceneID:
                         url = item.get('product_dload_url')                      
                         elapsed_time = (datetime.now() - starttime).seconds
-                        reached_timeout = elapsed_time > timeout
+                        reached_TIMEOUT = elapsed_time > TIMEOUT
                         print("Elapsed time is {0}m".format(elapsed_time / 60.0))
                         if len(url)>0:
                             downloader = BaseDownloader('espa_downloads')
@@ -142,16 +143,16 @@ def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
         for orderid in orderedIDs_not_completed:
             i+=1
             complete = False
-            reached_timeout = False
+            reached_TIMEOUT = False
             starttime = datetime.now()
             sceneID = sceneIDs_not_completed[i]
-            while not complete and not reached_timeout:
+            while not complete and not reached_TIMEOUT:
                 resp = api_request('item-status/{0}'.format(orderid))
                 for item in resp['orderid'][orderid]:
                     if item.get('name')==sceneID:
                         url = item.get('product_dload_url')
                         elapsed_time = (datetime.now() - starttime).seconds
-                        reached_timeout = elapsed_time > timeout
+                        reached_TIMEOUT = elapsed_time > TIMEOUT
                         print("Elapsed time is {0}m".format(elapsed_time / 60.0))
                         if len(url)>0:
                             downloader = BaseDownloader('espa_downloads')                            
@@ -167,13 +168,31 @@ def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
         #======Download data=========    
         for download in client.download_order_gen(orderidNew):
             print(download)
-    
+
 def get_modis_lai(tiles,product,version,start_date,end_date,auth):    
 
-    subprocess.call(["modis_download.py", "-r", "-U", "%s" % auth[0], "-P", 
-                    "%s" % auth[1],"-p", "%s.%s" % (product,version), "-t", 
-                    "%s" % tiles,"-s","MOTA", "-f", "%s" % start_date,"-e", "%s" % end_date, 
-                     "%s" % modis_base])
+    if product.startswith('MCD'):
+        folder = "MOTA"
+    elif product.startswith('MOD'):
+        folder = "MOLT"
+    else:
+        folder = "MOTA"
+    product_path = os.path.join(modis_base,product)   
+    if not os.path.exists(product_path):
+        os.mkdir(product_path)
+        
+    modisOgg = downModis(url="https://e4ftl01.cr.usgs.gov", destinationFolder=product_path, 
+                         user=auth[0], password=auth[1], tiles=tiles, path=folder, 
+                         product="%s.%s" % (product,version),today=start_date,enddate=end_date)
+
+    # connect to http or ftp
+    modisOgg.connect()
+    if modisOgg.nconnection <= 20:
+        # download data
+        modisOgg.downloadsAllDay()
+    else:
+        print("A problem with the connection occured")
+
                      
 def latlon_2modis_tile(lat,lon):
     # reference: https://code.env.duke.edu/projects/mget/wiki/SinusoidalMODIS
@@ -193,11 +212,11 @@ def geotiff_2envi():
     bands = ["blue","green","red","nir","swir1","swir2","cloud"]
     l8bands = ["sr_band2","sr_band3","sr_band4","sr_band5","sr_band6","sr_band7","cfmask"] 
     
-    landsatFiles = glob.glob(os.path.join(landsat_temp,"*_MTL.txt"))
-    for i in range(len(landsatFiles)):
+    landsat_files = glob.glob(os.path.join(landsat_temp,"*_MTL.txt"))
+    for i in range(len(landsat_files)):
         
-        fn = landsatFiles[i][:-8]
-        meta = landsat_metadata(landsatFiles[i])
+        fn = landsat_files[i][:-8]
+        meta = landsat_metadata(landsat_files[i])
         fstem = os.path.join(os.sep.join((fn.split(os.sep)[:-1])),meta.LANDSAT_SCENE_ID)
 
         for i in range(len(bands)):
@@ -212,11 +231,11 @@ def sample():
     bands = ["blue","green","red","nir","swir1","swir2","cloud"]
     l8bands = ["sr_band2","sr_band3","sr_band4","sr_band5","sr_band6","sr_band7","cfmask"] 
     
-    landsatFiles = glob.glob(os.path.join(landsat_temp,"*_MTL.txt"))
+    landsat_files = glob.glob(os.path.join(landsat_temp,"*_MTL.txt"))
     
-    for i in range(len(landsatFiles)):
-        #sceneID = landsatFiles[i].split(os.sep)[-1][:-4]
-        meta = landsat_metadata(landsatFiles[i])
+    for i in range(len(landsat_files)):
+        #sceneID = landsat_files[i].split(os.sep)[-1][:-4]
+        meta = landsat_metadata(landsat_files[i])
         sceneID = meta.LANDSAT_SCENE_ID
         
         # extract the Landsat doy and year
@@ -233,8 +252,8 @@ def sample():
         
         modFiles = glob.glob(os.path.join(modis_base,"MCD15A3H.A%s%s.*.hdf" % (year,mdoy)))
 
-        #fstem = landsatFiles[i][:-4]
-        fn = landsatFiles[i][:-8]
+        #fstem = landsat_files[i][:-4]
+        fn = landsat_files[i][:-8]
         fstem = os.path.join(os.sep.join((fn.split(os.sep)[:-1])),meta.LANDSAT_SCENE_ID)
         lai_path = landsat_LAI
         if not os.path.exists(lai_path):
@@ -261,12 +280,12 @@ def sample():
             
 def train():    
     cubist = 'cubist'
-    landsatFiles = glob.glob(os.path.join(landsat_LAI,"*.txt"))
+    landsat_files = glob.glob(os.path.join(landsat_LAI,"*.txt"))
     #======combine input data======================================
     df = pd.DataFrame(columns=['ulx','uly','blue',
         'green','red','nir','swir1','swir2','ndvi','ndwi','lai','weight','satFlag'])
-    for i in range(len(landsatFiles)):
-        sam_file = landsatFiles[i]
+    for i in range(len(landsat_files)):
+        sam_file = landsat_files[i]
     
         df = df.append(pd.read_csv(sam_file,delim_whitespace=True,names=['ulx','uly','blue',
         'green','red','nir','swir1','swir2','ndvi','ndwi','lai','weight','satFlag']),ignore_index=True)
@@ -306,13 +325,13 @@ def compute():
     bands = ["blue","green","red","nir","swir1","swir2","cloud"]
     l8bands = ["sr_band2","sr_band3","sr_band4","sr_band5","sr_band6","sr_band7","cfmask"] 
     
-    landsatFiles = glob.glob(os.path.join(landsat_temp,"*_MTL.txt"))
-    for i in range(len(landsatFiles)):
-#        sceneID = landsatFiles[i].split(os.sep)[-1][:-4]  
-        meta = landsat_metadata(landsatFiles[i])
+    landsat_files = glob.glob(os.path.join(landsat_temp,"*_MTL.txt"))
+    for i in range(len(landsat_files)):
+#        sceneID = landsat_files[i].split(os.sep)[-1][:-4]  
+        meta = landsat_metadata(landsat_files[i])
         sceneID = meta.LANDSAT_SCENE_ID
-        #fstem = landsatFiles[i][:-4]       
-        fn = landsatFiles[i][:-8]
+        #fstem = landsat_files[i][:-4]       
+        fn = landsat_files[i][:-8]
         fstem = os.path.join(os.sep.join((fn.split(os.sep)[:-1])),meta.LANDSAT_SCENE_ID)
         # create a folder for lai if it does not exist
         #lai_path = os.path.join(landsat_LAI,'%s' % sceneID[9:16])
@@ -398,19 +417,6 @@ def main():
     #start Landsat order process
     get_landsat_data(collection,loc,start_date,end_date,("%s"% usgs_user,"%s"% usgs_pass),cloud)
     
-    # find MODIS tiles that cover landsat scene
-    # MODIS products   
-    product = 'MCD15A3H'
-    version = '006'
-    [v,h]= latlon_2modis_tile(args.lat,args.lon)
-    tiles = "h%02dv%02d" %(h,v)
-    #tiles = 'h10v04,h10v05'
-    
-    # download MODIS LAI over the same area and time
-    print("Downloading MODIS data...")
-    get_modis_lai(tiles,product,version,start_date,end_date,("%s"% earth_user,"%s"% earth_pass))
-    
-    
     # move surface relectance files and estimate get LAI
     download_folder = os.path.join(base,'espa_downloads')
     folders_2move = glob.glob(os.path.join(download_folder ,'*'))
@@ -434,7 +440,19 @@ def main():
     if len(folders_2move)>0:
             #======Clean up folder===============================
             shutil.rmtree(download_folder)
-        
+    # find MODIS tiles that cover landsat scene
+    # MODIS products   
+    product = 'MCD15A3H'
+    version = '006'
+    [v,h] = latlon_2modis_tile(args.lat,args.lon)
+    tiles = "h%02dv%02d" %(h,v)
+    #tiles = 'h10v04,h10v05'
+    
+    # download MODIS LAI over the same area and time
+    print("Downloading MODIS data...")
+    get_modis_lai(tiles,product,version,start_date,end_date,("%s"% earth_user,"%s"% earth_pass))
+    
+       
     getLAI()
 
     print("All done with LAI")
