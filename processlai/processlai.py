@@ -204,7 +204,7 @@ def geotiff_2envi():
             tifFile = fn+"_%s.tif" % l8bands[i]
             datFile = fstem+"_%s.%s.dat" % (l8bands[i],bands[i])
             #subprocess.call(["%s" % geotiffConvert ,"%s" % tifFile, "%s" % datFile])
-            subprocess.call(["gdal_translate", "-of","-q", "ENVI","%s" % tifFile, "%s" % datFile ])
+            subprocess.call(["gdal_translate","-q", "-of", "ENVI","%s" % tifFile, "%s" % datFile ])
             os.rename("%s.hdr" % datFile[:-4],"%s.dat.hdr" % datFile[:-4])
 
 def sample():    
