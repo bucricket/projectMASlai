@@ -4,8 +4,6 @@ import os
 import gzip
 import zipfile
 from time import sleep
-import threading
-from queue import Queue
 
 
 def extract_archive(source_path, destination_path=None, delete_originals=False):

@@ -3,9 +3,7 @@ import simplejson as json
 from simplejson.scanner import JSONDecodeError
 from time import sleep
 from datetime import datetime
-from parse import search_landsat_tiles, search_modis_tiles
 from conf import API_HOST_URL, API_VERSION, HEADERS
-from Exceptions import *
 from Downloaders import BaseDownloader
 
 

@@ -21,11 +21,9 @@ import getpass
 import keyring
 import json
 from pyproj import Proj
-from .utils import folders,search,checkOrderCache
+from .utils import folders,search,check_order_cache
 from .Clients import Client
-from Downloaders import BaseDownloader
-#from .Order import Order
-#from .OrderTemplate import OrderTemplate
+from .Downloaders import BaseDownloader
 import pycurl
 from .landsatTools import landsat_metadata
 import requests
@@ -33,8 +31,6 @@ from time import sleep
 import logging
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.DEBUG)
-#import json
-#import getpass
 
 # The current URL hosting the ESPA interfaces has reached a stable version 1.0
 host = 'https://espa.cr.usgs.gov/api/v1/'
@@ -42,15 +38,15 @@ timeout=86400
 
 base = os.getcwd()
 Folders = folders(base)   
-modisBase = Folders['modisBase']
-landsatSR = Folders['landsatSR']
-landsatLAI = Folders['landsatLAI']
-landsatTemp = os.path.join(landsatSR,'temp')
-if not os.path.exists(landsatTemp):
-    os.mkdir(landsatTemp)
+modis_base = Folders['modis_base']
+landsat_SR = Folders['landsat_SR']
+landsat_LAI = Folders['landsat_LAI']
+landsat_temp = os.path.join(landsat_SR,'temp')
+if not os.path.exists(landsat_temp):
+    os.mkdir(landsat_temp)
 
 
-def getLandsatData(collection,loc,startDate,endDate,auth,cloud):
+def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
     username = auth[0]
     password = auth[1]
     client = Client(auth)
@@ -66,26 +62,26 @@ def getLandsatData(collection,loc,startDate,endDate,auth,cloud):
     l8_prods = ['sr','bt','cloud']
     #=====search for data=======
     print("Searching...")
-    sceneIDs = search(collection,loc[0],loc[1],startDate,endDate,cloud)
-    orderedData = checkOrderCache(auth)
+    sceneIDs = search(collection,loc[0],loc[1],start_date,end_date,cloud)
+    ordered_data = check_order_cache(auth)
     l8_tiles =[]
-    completedOrderedIDs = []
-    notCompletedOrderedIDs = []
-    completedSceneIDs = []
-    notCompletedSceneIDs =[]
+    orderedIDs_completed = []
+    orderedIDs_not_completed = []
+    sceneIDs_completed = []
+    sceneIDs_not_completed =[]
     for sceneID in sceneIDs:
         if sceneID.startswith('LC'):
-            dataFN = os.path.join(landsatSR,"%s" % sceneID.split('_')[2],"%s_MTL.txt" % sceneID)
+            dataFN = os.path.join(landsat_SR,"%s" % sceneID.split('_')[2],"%s_MTL.txt" % sceneID)
             if not os.path.exists(dataFN):
-                if not orderedData.empty:
-                    if np.sum(orderedData.productID==sceneID)>0:
-                        completedTest = (orderedData.productID==sceneID) & (orderedData.status=='complete')
-                        if len(orderedData[completedTest]['orderid'])>0:
-                            completedOrderedIDs.append(list(orderedData[completedTest]['orderid'])[0])
-                            completedSceneIDs.append(sceneID)
+                if not ordered_data.empty:
+                    if np.sum(ordered_data.productID==sceneID)>0:
+                        completed_test = (ordered_data.productID==sceneID) & (ordered_data.status=='complete')
+                        if len(ordered_data[completed_test]['orderid'])>0:
+                            orderedIDs_completed.append(list(ordered_data[completed_test]['orderid'])[0])
+                            sceneIDs_completed.append(sceneID)
                         else:
-                            notCompletedOrderedIDs.append(list(orderedData[(orderedData.productID==sceneID)]['orderid'])[-1])
-                            notCompletedSceneIDs.append(sceneID)
+                            orderedIDs_not_completed.append(list(ordered_data[(ordered_data.productID==sceneID)]['orderid'])[-1])
+                            sceneIDs_not_completed.append(sceneID)
                     else:
                         l8_tiles.append(sceneID)
                 else:
@@ -93,9 +89,9 @@ def getLandsatData(collection,loc,startDate,endDate,auth,cloud):
             else:
                 files = glob.glob("%s*" % dataFN[:-8])
                 for file in files:
-                    linkedFile = os.path.join(landsatTemp,file.split(os.sep)[-1])
-                    if not os.path.exists(linkedFile):
-                        os.symlink(file,linkedFile)
+                    linked_file = os.path.join(landsat_temp,file.split(os.sep)[-1])
+                    if not os.path.exists(linked_file):
+                        os.symlink(file,linked_file)
 
 
     
@@ -113,12 +109,12 @@ def getLandsatData(collection,loc,startDate,endDate,auth,cloud):
         print(json.dumps(resp, indent=4))
         orderidNew = resp['orderid']
                     
-    if completedOrderedIDs:
+    if orderedIDs_completed:
         print("downloading completed existing orders...")
         i = -1
-        for orderid in completedOrderedIDs:
+        for orderid in orderedIDs_completed:
             i+=1
-            sceneID = completedSceneIDs[i]
+            sceneID = sceneIDs_completed[i]
             complete = False
             reached_timeout = False
             starttime = datetime.now()
@@ -140,15 +136,15 @@ def getLandsatData(collection,loc,startDate,endDate,auth,cloud):
                             sleep(300)
                         
                         
-    if notCompletedOrderedIDs:
+    if orderedIDs_not_completed:
         print("waiting for cached existing orders...")
         i = -1
-        for orderid in notCompletedOrderedIDs:
+        for orderid in orderedIDs_not_completed:
             i+=1
             complete = False
             reached_timeout = False
             starttime = datetime.now()
-            sceneID = notCompletedSceneIDs[i]
+            sceneID = sceneIDs_not_completed[i]
             while not complete and not reached_timeout:
                 resp = api_request('item-status/{0}'.format(orderid))
                 for item in resp['orderid'][orderid]:
@@ -172,14 +168,14 @@ def getLandsatData(collection,loc,startDate,endDate,auth,cloud):
         for download in client.download_order_gen(orderidNew):
             print(download)
     
-def getMODISlai(tiles,product,version,startDate,endDate,auth):    
+def get_modis_lai(tiles,product,version,start_date,end_date,auth):    
 
     subprocess.call(["modis_download.py", "-r", "-U", "%s" % auth[0], "-P", 
                     "%s" % auth[1],"-p", "%s.%s" % (product,version), "-t", 
-                    "%s" % tiles,"-s","MOTA", "-f", "%s" % startDate,"-e", "%s" % endDate, 
-                     "%s" % modisBase])
+                    "%s" % tiles,"-s","MOTA", "-f", "%s" % start_date,"-e", "%s" % end_date, 
+                     "%s" % modis_base])
                      
-def latlon2MODtile(lat,lon):
+def latlon_2modis_tile(lat,lon):
     # reference: https://code.env.duke.edu/projects/mget/wiki/SinusoidalMODIS
     p_modis_grid = Proj('+proj=sinu +R=6371007.181 +nadgrids=@null +wktext')
     x, y = p_modis_grid(lon, lat)
@@ -192,12 +188,12 @@ def latlon2MODtile(lat,lon):
     V = 18-((y-uly)/tileWidth)
     return int(V),int(H)
     
-def geotiff2envi():   
-    geotiffConvert = 'GeoTiff2ENVI'
+def geotiff_2envi():   
+    #geotiffConvert = 'GeoTiff2ENVI'
     bands = ["blue","green","red","nir","swir1","swir2","cloud"]
     l8bands = ["sr_band2","sr_band3","sr_band4","sr_band5","sr_band6","sr_band7","cfmask"] 
     
-    landsatFiles = glob.glob(os.path.join(landsatTemp,"*_MTL.txt"))
+    landsatFiles = glob.glob(os.path.join(landsat_temp,"*_MTL.txt"))
     for i in range(len(landsatFiles)):
         
         fn = landsatFiles[i][:-8]
@@ -216,7 +212,7 @@ def sample():
     bands = ["blue","green","red","nir","swir1","swir2","cloud"]
     l8bands = ["sr_band2","sr_band3","sr_band4","sr_band5","sr_band6","sr_band7","cfmask"] 
     
-    landsatFiles = glob.glob(os.path.join(landsatTemp,"*_MTL.txt"))
+    landsatFiles = glob.glob(os.path.join(landsat_temp,"*_MTL.txt"))
     
     for i in range(len(landsatFiles)):
         #sceneID = landsatFiles[i].split(os.sep)[-1][:-4]
@@ -235,18 +231,18 @@ def sample():
         # find the 4 day MODIS doy prior to the Landsat doy
         mdoy = int((int((float(ldoy)-1.)/4.)*4.)+1)
         
-        modFiles = glob.glob(os.path.join(modisBase,"MCD15A3H.A%s%s.*.hdf" % (year,mdoy)))
+        modFiles = glob.glob(os.path.join(modis_base,"MCD15A3H.A%s%s.*.hdf" % (year,mdoy)))
 
         #fstem = landsatFiles[i][:-4]
         fn = landsatFiles[i][:-8]
         fstem = os.path.join(os.sep.join((fn.split(os.sep)[:-1])),meta.LANDSAT_SCENE_ID)
-        laiPath = landsatLAI
-        if not os.path.exists(laiPath):
-            os.mkdir(laiPath)
-        sam_file = os.path.join(laiPath,"SR_LAI.%s.%s.MCD15A3H_A%s%s.txt" %(date,sceneID,year,mdoy))
+        lai_path = landsat_LAI
+        if not os.path.exists(lai_path):
+            os.mkdir(lai_path)
+        sam_file = os.path.join(lai_path,"SR_LAI.%s.%s.MCD15A3H_A%s%s.txt" %(date,sceneID,year,mdoy))
         
         for i in range(len(modFiles)):  
-            fn = os.path.join(laiPath,"slai%d.inp" % i)
+            fn = os.path.join(lai_path,"slai%d.inp" % i)
             file = open(fn, "w")
             file.write("LANDSAT_BASE_BLUE = %s_%s.%s.dat\n" % (fstem,l8bands[0],bands[0]))
             file.write("LANDSAT_BASE_GREEN = %s_%s.%s.dat\n" % (fstem,l8bands[1],bands[1]))
@@ -261,11 +257,11 @@ def sample():
             file.close()
         
             subprocess.call(["%s" % sample , "%s" % fn])
-            os.remove(os.path.join(laiPath,"slai%d.inp" % i))
+            os.remove(os.path.join(lai_path,"slai%d.inp" % i))
             
 def train():    
     cubist = 'cubist'
-    landsatFiles = glob.glob(os.path.join(landsatLAI,"*.txt"))
+    landsatFiles = glob.glob(os.path.join(landsat_LAI,"*.txt"))
     #======combine input data======================================
     df = pd.DataFrame(columns=['ulx','uly','blue',
         'green','red','nir','swir1','swir2','ndvi','ndwi','lai','weight','satFlag'])
@@ -278,15 +274,15 @@ def train():
     #=====create filestem.data====================================
     df = df[(df.satFlag=='N')]
     df = df.sort_values(by='weight')
-    startDate='200'
-    endDate = '300'
-    filestem = os.path.join(landsatLAI,"lndsr_modlai_samples.combined_%s-%s" %(startDate,endDate))
-    df.to_csv(os.path.join(landsatLAI,filestem+".data"), columns = ['blue','green','red',
+    start_date='200'
+    end_date = '300'
+    filestem = os.path.join(landsat_LAI,"lndsr_modlai_samples.combined_%s-%s" %(start_date,end_date))
+    df.to_csv(os.path.join(landsat_LAI,filestem+".data"), columns = ['blue','green','red',
     'nir','swir1','swir2','ndvi','ndwi','lai','weight'],header=None, 
     index=None, mode='w',  sep="\t", encoding='utf-8')
     
     #====create filestem.names====================================
-    fn = os.path.join(landsatLAI,"%s.names" % filestem)
+    fn = os.path.join(landsat_LAI,"%s.names" % filestem)
     file = open(fn, "w")
     file.write("lai.\n")
     file.write("B1: continuous\n")
@@ -310,7 +306,7 @@ def compute():
     bands = ["blue","green","red","nir","swir1","swir2","cloud"]
     l8bands = ["sr_band2","sr_band3","sr_band4","sr_band5","sr_band6","sr_band7","cfmask"] 
     
-    landsatFiles = glob.glob(os.path.join(landsatTemp,"*_MTL.txt"))
+    landsatFiles = glob.glob(os.path.join(landsat_temp,"*_MTL.txt"))
     for i in range(len(landsatFiles)):
 #        sceneID = landsatFiles[i].split(os.sep)[-1][:-4]  
         meta = landsat_metadata(landsatFiles[i])
@@ -319,16 +315,16 @@ def compute():
         fn = landsatFiles[i][:-8]
         fstem = os.path.join(os.sep.join((fn.split(os.sep)[:-1])),meta.LANDSAT_SCENE_ID)
         # create a folder for lai if it does not exist
-        #laiPath = os.path.join(landsatLAI,'%s' % sceneID[9:16])
-        laiPath = os.path.join(landsatLAI,'%s' % sceneID[3:9])
-        if not os.path.exists(laiPath):
-            os.mkdir(laiPath)
+        #lai_path = os.path.join(landsat_LAI,'%s' % sceneID[9:16])
+        lai_path = os.path.join(landsat_LAI,'%s' % sceneID[3:9])
+        if not os.path.exists(lai_path):
+            os.mkdir(lai_path)
         
-        startDate='200'
-        endDate = '300'
-        filestem = os.path.join(landsatLAI,"lndsr_modlai_samples.combined_%s-%s" %(startDate,endDate))
-        laiFN = os.path.join(landsatLAI,"lndlai.%s.hdf" % sceneID)
-        fn = os.path.join(landsatLAI,"compute_lai%s.inp")
+        start_date='200'
+        end_date = '300'
+        filestem = os.path.join(landsat_LAI,"lndsr_modlai_samples.combined_%s-%s" %(start_date,end_date))
+        laiFN = os.path.join(landsat_LAI,"lndlai.%s.hdf" % sceneID)
+        fn = os.path.join(landsat_LAI,"compute_lai%s.inp")
         file = open(fn, "w")
         file.write("LANDSAT_BASE_BLUE = %s_%s.%s.dat\n" % (fstem,l8bands[0],bands[0]))
         file.write("LANDSAT_BASE_GREEN = %s_%s.%s.dat\n" % (fstem,l8bands[1],bands[1]))
@@ -342,18 +338,18 @@ def compute():
         file.close()
         
         subprocess.call(["%s" % lndbio , "%s" % fn])
-        shutil.move(laiFN,os.path.join(laiPath,"lndlai.%s.hdf" % sceneID))
+        shutil.move(laiFN,os.path.join(lai_path,"lndlai.%s.hdf" % sceneID))
         os.remove(fn)
     #=====CLEANING UP========
-    filelist = [ f for f in os.listdir(landsatLAI) if f.startswith("lndsr_modlai_samples") ]
+    filelist = [ f for f in os.listdir(landsat_LAI) if f.startswith("lndsr_modlai_samples") ]
     for f in filelist:
-        os.remove(os.path.join(landsatLAI,f))
+        os.remove(os.path.join(landsat_LAI,f))
     
 def getLAI():    
     # Convert Landsat SR downloads to ENVI format
     # Note:  May be some warnings about unknown field - ignore.
     print("Converting Landsat SR to ENVI format...")
-    geotiff2envi()
+    geotiff_2envi()
     
     # Generate MODIS-Landsat samples for LAI computation
     print("Generating MODIS-Landsat samples...")
@@ -369,78 +365,75 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("lat", type=float, help="latitude")
     parser.add_argument("lon", type=float, help="longitude")
-    parser.add_argument("startDate", type=str, help="Start date yyyy-mm-dd")
-    parser.add_argument("endDate", type=str, help="Start date yyyy-mm-dd")
+    parser.add_argument("start_date", type=str, help="Start date yyyy-mm-dd")
+    parser.add_argument("end_date", type=str, help="Start date yyyy-mm-dd")
     parser.add_argument("cloud", type=int, help="cloud coverage")
     args = parser.parse_args()
       
     loc = [args.lat,args.lon] 
-    startDate = args.startDate
-    endDate = args.endDate
+    start_date = args.start_date
+    end_date = args.end_date
     cloud = args.cloud
     collection = 1
-    # set project base directory structure
-    #41.18,-96.43
-
     
     # =====USGS credentials===============
      # need to get this from pop up
-    usgsUser = str(getpass.getpass(prompt="usgs username:"))
-    if keyring.get_password("usgs",usgsUser)==None:
-        usgsPass = str(getpass.getpass(prompt="usgs password:"))
-        keyring.set_password("usgs",usgsUser,usgsPass)
+    usgs_user = str(getpass.getpass(prompt="usgs username:"))
+    if keyring.get_password("usgs",usgs_user)==None:
+        usgs_pass = str(getpass.getpass(prompt="usgs password:"))
+        keyring.set_password("usgs",usgs_user,usgs_pass)
     else:
-        usgsPass = str(keyring.get_password("usgs",usgsUser)) 
+        usgs_pass = str(keyring.get_password("usgs",usgs_user)) 
     
     
      # =====earthData credentials===============
-    earthLoginUser = str(getpass.getpass(prompt="earth login username:"))
-    if keyring.get_password("nasa",earthLoginUser)==None:
-        earthLoginPass = str(getpass.getpass(prompt="earth login password:"))
-        keyring.set_password("nasa",earthLoginUser,earthLoginPass)
+    earth_user = str(getpass.getpass(prompt="earth login username:"))
+    if keyring.get_password("nasa",earth_user)==None:
+        earth_pass = str(getpass.getpass(prompt="earth login password:"))
+        keyring.set_password("nasa",earth_user,earth_pass)
     else:
-        earthLoginPass = str(keyring.get_password("nasa",earthLoginUser)) 
+        earth_pass = str(keyring.get_password("nasa",earth_user)) 
         
     
     #start Landsat order process
-    getLandsatData(collection,loc,startDate,endDate,("%s"% usgsUser,"%s"% usgsPass),cloud)
+    get_landsat_data(collection,loc,start_date,end_date,("%s"% usgs_user,"%s"% usgs_pass),cloud)
     
     # find MODIS tiles that cover landsat scene
     # MODIS products   
     product = 'MCD15A3H'
     version = '006'
-    [v,h]= latlon2MODtile(args.lat,args.lon)
+    [v,h]= latlon_2modis_tile(args.lat,args.lon)
     tiles = "h%02dv%02d" %(h,v)
     #tiles = 'h10v04,h10v05'
     
     # download MODIS LAI over the same area and time
     print("Downloading MODIS data...")
-    getMODISlai(tiles,product,version,startDate,endDate,("%s"% earthLoginUser,"%s"% earthLoginPass))
+    get_modis_lai(tiles,product,version,start_date,end_date,("%s"% earth_user,"%s"% earth_pass))
     
     
     # move surface relectance files and estimate get LAI
-    downloadFolder = os.path.join(base,'espa_downloads')
-    folders2move = glob.glob(os.path.join(downloadFolder ,'*'))
+    download_folder = os.path.join(base,'espa_downloads')
+    folders_2move = glob.glob(os.path.join(download_folder ,'*'))
 
-    for i in range(len(folders2move)):
-        inputFN = folders2move[i]
+    for i in range(len(folders_2move)):
+        inputFN = folders_2move[i]
         metFN = glob.glob(os.path.join(inputFN,'*MTL.txt'))[0]
         meta = landsat_metadata(metFN)
         #sceneID = (inputFN).split(os.sep)[-1].split('-')[0]
         sceneID = meta.LANDSAT_SCENE_ID
         scene = sceneID[3:9]
-        folder = os.path.join(landsatSR,scene)
+        folder = os.path.join(landsat_SR,scene)
         if not os.path.exists(folder):
             os.mkdir(folder)
     
         for filename in glob.glob(os.path.join(inputFN, '*.*')):
             shutil.copy(filename, folder)  
             os.symlink(os.path.join(folder,filename.split(os.sep)[-1]),
-            os.path.join(landsatTemp,filename.split(os.sep)[-1]))
+            os.path.join(landsat_temp,filename.split(os.sep)[-1]))
  
-    if len(folders2move)>0:
+    if len(folders_2move)>0:
             #======Clean up folder===============================
-            shutil.rmtree(downloadFolder)
+            shutil.rmtree(download_folder)
         
     getLAI()
 
