@@ -29,7 +29,7 @@ def folders(base):
     modis_base = os.path.join(base,'data','MODIS')
     if not os.path.exists(modis_base):
         os.mkdir(modis_base)
-    out = {'landsat_SR':landsat_SR,'modis_base':modis_base,'landsatLAI':landsat_LAI}
+    out = {'landsat_SR':landsat_SR,'modis_base':modis_base,'landsat_LAI':landsat_LAI}
     return out
 
 
