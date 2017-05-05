@@ -250,7 +250,7 @@ def sample():
         # find the 4 day MODIS doy prior to the Landsat doy
         mdoy = int((int((float(ldoy)-1.)/4.)*4.)+1)
         
-        modFiles = glob.glob(os.path.join(modis_base,"MCD15A3H.A%s%s.*.hdf" % (year,mdoy)))
+        modFiles = glob.glob(os.path.join(modis_base,"MCD15A3H","MCD15A3H.A%s%s.*.hdf" % (year,mdoy)))
 
         #fstem = landsat_files[i][:-4]
         fn = landsat_files[i][:-8]
