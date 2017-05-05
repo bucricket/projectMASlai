@@ -276,7 +276,7 @@ def sample():
             file.close()
         
             subprocess.call(["%s" % sample , "%s" % fn])
-            os.remove(os.path.join(lai_path,"slai%d.inp" % i))
+            #os.remove(os.path.join(lai_path,"slai%d.inp" % i))
             
 def train():    
     cubist = 'cubist'
