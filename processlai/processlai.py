@@ -343,7 +343,7 @@ def compute():
         end_date = '300'
         filestem = os.path.join(landsat_LAI,"lndsr_modlai_samples.combined_%s-%s" %(start_date,end_date))
         laiFN = os.path.join(landsat_LAI,"lndlai.%s.hdf" % sceneID)
-        fn = os.path.join(landsat_LAI,"compute_lai%s.inp")
+        fn = os.path.join(landsat_LAI,"compute_lai.inp")
         file = open(fn, "w")
         file.write("LANDSAT_BASE_BLUE = %s_%s.%s.dat\n" % (fstem,l8bands[0],bands[0]))
         file.write("LANDSAT_BASE_GREEN = %s_%s.%s.dat\n" % (fstem,l8bands[1],bands[1]))
