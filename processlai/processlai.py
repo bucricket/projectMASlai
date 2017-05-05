@@ -364,7 +364,47 @@ def compute():
     for f in filelist:
         os.remove(os.path.join(landsat_LAI,f))
     
-def getLAI():    
+def get_LAI(collection,loc,start_date,end_date,usgs_user,usgs_pass,earth_user,
+            earth_pass,cloud):    
+    
+    #start Landsat order process
+    get_landsat_data(collection,loc,start_date,end_date,("%s"% usgs_user,"%s"% usgs_pass),cloud)
+    
+    # move surface relectance files and estimate get LAI
+    download_folder = os.path.join(base,'espa_downloads')
+    folders_2move = glob.glob(os.path.join(download_folder ,'*'))
+
+    for i in range(len(folders_2move)):
+        inputFN = folders_2move[i]
+        metFN = glob.glob(os.path.join(inputFN,'*MTL.txt'))[0]
+        meta = landsat_metadata(metFN)
+        #sceneID = (inputFN).split(os.sep)[-1].split('-')[0]
+        sceneID = meta.LANDSAT_SCENE_ID
+        scene = sceneID[3:9]
+        folder = os.path.join(landsat_SR,scene)
+        if not os.path.exists(folder):
+            os.mkdir(folder)
+    
+        for filename in glob.glob(os.path.join(inputFN, '*.*')):
+            shutil.copy(filename, folder)  
+            os.symlink(os.path.join(folder,filename.split(os.sep)[-1]),
+            os.path.join(landsat_temp,filename.split(os.sep)[-1]))
+ 
+    if len(folders_2move)>0:
+            #======Clean up folder===============================
+            shutil.rmtree(download_folder)
+    # find MODIS tiles that cover landsat scene
+    # MODIS products   
+    product = 'MCD15A3H'
+    version = '006'
+    [v,h] = latlon_2modis_tile(loc[0],loc[1])
+    tiles = "h%02dv%02d" %(h,v)
+    #tiles = 'h10v04,h10v05'
+    
+    # download MODIS LAI over the same area and time
+    print("Downloading MODIS data...")
+    get_modis_lai(tiles,product,version,start_date,end_date,("%s"% earth_user,"%s"% earth_pass))
+    
     # Convert Landsat SR downloads to ENVI format
     # Note:  May be some warnings about unknown field - ignore.
     print("Converting Landsat SR to ENVI format...")
@@ -412,48 +452,9 @@ def main():
         keyring.set_password("nasa",earth_user,earth_pass)
     else:
         earth_pass = str(keyring.get_password("nasa",earth_user)) 
-        
     
-    #start Landsat order process
-    get_landsat_data(collection,loc,start_date,end_date,("%s"% usgs_user,"%s"% usgs_pass),cloud)
-    
-    # move surface relectance files and estimate get LAI
-    download_folder = os.path.join(base,'espa_downloads')
-    folders_2move = glob.glob(os.path.join(download_folder ,'*'))
-
-    for i in range(len(folders_2move)):
-        inputFN = folders_2move[i]
-        metFN = glob.glob(os.path.join(inputFN,'*MTL.txt'))[0]
-        meta = landsat_metadata(metFN)
-        #sceneID = (inputFN).split(os.sep)[-1].split('-')[0]
-        sceneID = meta.LANDSAT_SCENE_ID
-        scene = sceneID[3:9]
-        folder = os.path.join(landsat_SR,scene)
-        if not os.path.exists(folder):
-            os.mkdir(folder)
-    
-        for filename in glob.glob(os.path.join(inputFN, '*.*')):
-            shutil.copy(filename, folder)  
-            os.symlink(os.path.join(folder,filename.split(os.sep)[-1]),
-            os.path.join(landsat_temp,filename.split(os.sep)[-1]))
- 
-    if len(folders_2move)>0:
-            #======Clean up folder===============================
-            shutil.rmtree(download_folder)
-    # find MODIS tiles that cover landsat scene
-    # MODIS products   
-    product = 'MCD15A3H'
-    version = '006'
-    [v,h] = latlon_2modis_tile(args.lat,args.lon)
-    tiles = "h%02dv%02d" %(h,v)
-    #tiles = 'h10v04,h10v05'
-    
-    # download MODIS LAI over the same area and time
-    print("Downloading MODIS data...")
-    get_modis_lai(tiles,product,version,start_date,end_date,("%s"% earth_user,"%s"% earth_pass))
-    
-       
-    getLAI()
+    get_LAI(collection,loc,start_date,end_date,usgs_user,usgs_pass,earth_user,
+            earth_pass,cloud)
 
     print("All done with LAI")
 
