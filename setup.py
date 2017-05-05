@@ -92,7 +92,8 @@ setup(
     author="Mitchell Schull",
     author_email="mitch.schull@noaa.gov",
     url="https://github.com/bucricket/projectMASlai.git",
-    packages= ['processlai'],
+    py_modules=['processlai.processlai'],
+    #packages= ['processlai'],
     platforms='Posix; MacOS X; Windows',
     license='BSD 3-Clause',
     classifiers=[
