@@ -67,13 +67,6 @@ os.chdir(mkPath)
 subprocess.call(["scons","-Q","--prefix=%s" % prefix,"install"])
 subprocess.call(["scons","-c"])
 
-print ("installing GeoTiff2ENVI...")
-mkPath = os.path.join(processDir,'source','Landsat_LAI','GeoTiff2ENVI')
-os.chdir(mkPath)
-subprocess.call(["scons","-Q","--prefix=%s" % prefix,"install"])
-subprocess.call(["scons","-c"])
-
-
 print ("installing Cubist...")
 mkPath = os.path.join(processDir,'source','Cubist')
 os.chdir(mkPath)
