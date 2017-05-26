@@ -4,8 +4,6 @@ from __future__ import print_function
 import subprocess
 import os
 
-
-
 # set project base directory structure
 base = os.getcwd()
     
@@ -25,7 +23,6 @@ out = p.communicate()
 condaPath = out[0][:-1]
     
 prefix  = os.environ.get('PREFIX')
-print (prefix)
 processDi = os.path.abspath(os.path.join(prefix,os.pardir))
 processDir = os.path.join(processDi,'work')
 libEnv = os.path.join(prefix,'lib')

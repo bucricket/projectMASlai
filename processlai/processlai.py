@@ -72,21 +72,26 @@ def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
     sceneIDs_not_completed =[]
     for sceneID in sceneIDs:
         if sceneID.startswith('LC'):
-            dataFN = os.path.join(landsat_SR,"%s" % sceneID.split('_')[2],"%s_MTL.txt" % sceneID)
+            if collection == 0:
+                scene = sceneID[3:9]
+            else:
+                scene = sceneID.split('_')[2]    
+            dataFN = os.path.join(landsat_SR,"%s" % scene,"%s_MTL.txt" % sceneID)
             if not os.path.exists(dataFN):
-                if not ordered_data.empty:
-                    if np.sum(ordered_data.productID==sceneID)>0:
-                        completed_test = (ordered_data.productID==sceneID) & (ordered_data.status=='complete')
-                        if len(ordered_data[completed_test]['orderid'])>0:
-                            orderedIDs_completed.append(list(ordered_data[completed_test]['orderid'])[0])
-                            sceneIDs_completed.append(sceneID)
+                if collection > 0: # can't order pre-collection data anymore
+                    if not ordered_data.empty:
+                        if np.sum(ordered_data.productID==sceneID)>0:
+                            completed_test = (ordered_data.productID==sceneID) & (ordered_data.status=='complete')
+                            if len(ordered_data[completed_test]['orderid'])>0:
+                                orderedIDs_completed.append(list(ordered_data[completed_test]['orderid'])[0])
+                                sceneIDs_completed.append(sceneID)
+                            else:
+                                orderedIDs_not_completed.append(list(ordered_data[(ordered_data.productID==sceneID)]['orderid'])[-1])
+                                sceneIDs_not_completed.append(sceneID)
                         else:
-                            orderedIDs_not_completed.append(list(ordered_data[(ordered_data.productID==sceneID)]['orderid'])[-1])
-                            sceneIDs_not_completed.append(sceneID)
+                            l8_tiles.append(sceneID)
                     else:
                         l8_tiles.append(sceneID)
-                else:
-                    l8_tiles.append(sceneID)
             else:
                 files = glob.glob("%s*" % dataFN[:-8])
                 for file in files:
