@@ -79,8 +79,10 @@ def check_order_cache(auth):
     orderID =[]
     fName = []
     order_status=[]
-    for i in range(len(order_list['orders'])):
-        orderid = order_list['orders'][i]
+#    for i in range(len(order_list['orders'])):
+#        orderid = order_list['orders'][i]
+    for i in range(len(order_list)):
+        orderid = order_list[i]
         date = orderid.split('-')[1]
         if len(date)>8:
             continue
