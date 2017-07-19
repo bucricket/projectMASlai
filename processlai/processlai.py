@@ -48,7 +48,13 @@ if not os.path.exists(landsat_temp):
 
 def espa_api(endpoint, verb='get', body=None, uauth=None):
     """ Suggested simple way to interact with the ESPA JSON REST API """
-    auth_tup = uauth if uauth else (username, password)
+#    auth_tup = uauth if uauth else print "need USGS creds!" exit()
+    if uauth:
+        auth_tup = uauth
+    else:
+        print "need USGS creds!" 
+        exit()
+        
     response = getattr(requests, verb)(host + endpoint, auth=auth_tup, json=body)
     print('{} {}'.format(response.status_code, response.reason))
     data = response.json()
