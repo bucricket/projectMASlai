@@ -122,7 +122,7 @@ def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
     if l8_tiles:
         print("Ordering new data...")
         #========setup order=========
-        order = espa_api('available-products', verb='post', body=dict(inputs=l8_tiles))
+        order = espa_api('available-products', body=dict(inputs=l8_tiles))
         for sensor in order.keys():
             if isinstance(order[sensor], dict) and order[sensor].get('inputs'):
                 order[sensor]['products'] = l8_prods
