@@ -73,9 +73,30 @@ def check_order_cache(auth):
         auth_tup = uauth if uauth else (username, password)
         response = getattr(requests, verb)(host + endpoint, auth=auth_tup, json=json)
         return response.json()
-    usr = api_request('user')
     
-    order_list = api_request('list-orders/%s' % usr['email'])
+    def espa_api(endpoint, verb='get', body=None, uauth=None):
+        """ Suggested simple way to interact with the ESPA JSON REST API """
+        auth_tup = uauth if uauth else (username, password)
+        response = getattr(requests, verb)(host + endpoint, auth=auth_tup, json=body)
+        print('{} {}'.format(response.status_code, response.reason))
+        data = response.json()
+        if isinstance(data, dict):
+            messages = data.pop("messages", None)  
+            if messages:
+                print(json.dumps(messages, indent=4))
+        try:
+            response.raise_for_status()
+        except Exception as e:
+            print(e)
+            return None
+        else:
+            return data
+    
+#    usr = api_request('user')
+    
+#    order_list = api_request('list-orders/%s' % usr['email'])
+    filters = {"status": ["complete", "ordered"]}  # Here, we ignore any purged orders
+    order_list = espa_api('list-orders', body=filters)
     orderID =[]
     fName = []
     order_status=[]
@@ -83,25 +104,26 @@ def check_order_cache(auth):
 #        orderid = order_list['orders'][i]
     for i in range(len(order_list)):
         orderid = order_list[i]
-        date = orderid.split('-')[1]
-        if len(date)>8:
-            continue
-        year = int(date[4:])
-        day = int(date[2:4])
-        month = int(date[:2])
-        dOrder = datetime(year,month,day)
-        delt_date = (datetime.now()-dOrder).days
-        if delt_date>10:
-            continue
-        resp = api_request('item-status/{0}'.format(orderid))
+#        date = orderid.split('-')[1]
+#        if len(date)>8:
+#            continue
+#        year = int(date[4:])
+#        day = int(date[2:4])
+#        month = int(date[:2])
+#        dOrder = datetime(year,month,day)
+#        delt_date = (datetime.now()-dOrder).days
+#        if delt_date>10:
+#            continue
+#        resp = api_request('item-status/{0}'.format(orderid))
+        resp = espa_api('item-status/{0}'.format(orderid))
         ddd = json.loads(json.dumps(resp))
-        if not ddd['orderid']['%s' % orderid][0]['status']=='purged':
-            for j in range(len(ddd['orderid']['%s' % orderid])):
-                fname = ddd['orderid']['%s' % orderid][j]['name']
-                status = ddd['orderid']['%s' % orderid][j]['status']
-                orderID.append(orderid)
-                fName.append(fname)
-                order_status.append(status)
+#        if not ddd['orderid']['%s' % orderid][0]['status']=='purged':
+        for j in range(len(ddd['%s' % orderid])):
+            fname = ddd['%s' % orderid][j]['name']
+            status = ddd['%s' % orderid][j]['status']
+            orderID.append(orderid)
+            fName.append(fname)
+            order_status.append(status)
                 
     output = {'orderid':orderID,'productID':fName,'status':order_status}
     outDF = pd.DataFrame(output)  

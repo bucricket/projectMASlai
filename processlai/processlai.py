@@ -58,6 +58,24 @@ def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
         auth_tup = uauth if uauth else (username, password)
         response = getattr(requests, verb)(host + endpoint, auth=auth_tup, json=json)
         return response.json()
+    
+    def espa_api(endpoint, verb='get', body=None, uauth=None):
+        """ Suggested simple way to interact with the ESPA JSON REST API """
+        auth_tup = uauth if uauth else (username, password)
+        response = getattr(requests, verb)(host + endpoint, auth=auth_tup, json=body)
+        print('{} {}'.format(response.status_code, response.reason))
+        data = response.json()
+        if isinstance(data, dict):
+            messages = data.pop("messages", None)  
+            if messages:
+                print(json.dumps(messages, indent=4))
+        try:
+            response.raise_for_status()
+        except Exception as e:
+            print(e)
+            return None
+        else:
+            return data
 
     #=====set products=======
     l8_prods = ['sr','bt','cloud']
@@ -77,13 +95,13 @@ def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
             else:
                 scene = sceneID.split('_')[2]    
             dataFN = os.path.join(landsat_SR,"%s" % scene,"%s_MTL.txt" % sceneID)
-            if not os.path.exists(dataFN):
+            if not os.path.exists(dataFN): # check if we have the data on our system
                 if collection > 0: # can't order pre-collection data anymore
                     if not ordered_data.empty:
                         if np.sum(ordered_data.productID==sceneID)>0:
                             completed_test = (ordered_data.productID==sceneID) & (ordered_data.status=='complete')
-                            if len(ordered_data[completed_test]['orderid'])>0:
-                                orderedIDs_completed.append(list(ordered_data[completed_test]['orderid'])[0])
+                            if len(ordered_data[completed_test])>0:
+                                orderedIDs_completed.append(list(ordered_data[completed_test])[0])
                                 sceneIDs_completed.append(sceneID)
                             else:
                                 orderedIDs_not_completed.append(list(ordered_data[(ordered_data.productID==sceneID)]['orderid'])[-1])
@@ -104,16 +122,16 @@ def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
     if l8_tiles:
         print("Ordering new data...")
         #========setup order=========
-        order = api_request('available-products', verb='post', json=dict(inputs=l8_tiles))
+        order = espa_api('available-products', verb='post', json=dict(inputs=l8_tiles))
         for sensor in order.keys():
             if isinstance(order[sensor], dict) and order[sensor].get('inputs'):
                 order[sensor]['products'] = l8_prods
         
         order['format'] = 'gtiff'
         # =======order the data============
-        resp = api_request('order', verb='post', json=order)
+        resp = espa_api('order', verb='post', json=order)
         print(json.dumps(resp, indent=4))
-        orderidNew = resp['orderid']
+        orderidNew = resp
                     
     if orderedIDs_completed:
         print("downloading completed existing orders...")
@@ -125,8 +143,8 @@ def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
             reached_TIMEOUT = False
             starttime = datetime.now()
             while not complete and not reached_TIMEOUT:
-                resp = api_request('item-status/{0}'.format(orderid))
-                for item in resp['orderid'][orderid]:
+                resp = espa_api('item-status/{0}'.format(orderid))
+                for item in resp[orderid]:
                     if item.get('name')==sceneID:
                         url = item.get('product_dload_url')                      
                         elapsed_time = (datetime.now() - starttime).seconds
@@ -153,7 +171,7 @@ def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
             sceneID = sceneIDs_not_completed[i]
             while not complete and not reached_TIMEOUT:
                 resp = api_request('item-status/{0}'.format(orderid))
-                for item in resp['orderid'][orderid]:
+                for item in resp[orderid]:
                     if item.get('name')==sceneID:
                         url = item.get('product_dload_url')
                         elapsed_time = (datetime.now() - starttime).seconds
