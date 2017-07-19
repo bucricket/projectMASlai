@@ -46,11 +46,82 @@ landsat_temp = os.path.join(landsat_SR,'temp')
 if not os.path.exists(landsat_temp):
     os.mkdir(landsat_temp)
 
+def espa_api(endpoint, verb='get', body=None, uauth=None):
+    """ Suggested simple way to interact with the ESPA JSON REST API """
+    auth_tup = uauth if uauth else (username, password)
+    response = getattr(requests, verb)(host + endpoint, auth=auth_tup, json=body)
+    print('{} {}'.format(response.status_code, response.reason))
+    data = response.json()
+    if isinstance(data, dict):
+        messages = data.pop("messages", None)  
+        if messages:
+            print(json.dumps(messages, indent=4))
+    try:
+        response.raise_for_status()
+    except Exception as e:
+        print(e)
+        return None
+    else:
+        return data
+    
+def download_order_gen(order_id, auth, downloader=None, sleep_time=300, timeout=86400, **dlkwargs):
+    """
+    This function is a generator that yields the results from the input downloader classes
+    download() method. This is a generator mostly so that data pipeline functions that operate
+    upon freshly downloaded files may immediately get started on them.
+
+    :param order_id:            order name
+    :param downloader:          optional downloader for tiles. child of BaseDownloader class
+                                of a Downloaders.BaseDownloader or child class
+    :param sleep_time:          number of seconds to wait between checking order status
+    :param timeout:             maximum number of seconds to run program
+    :param dlkwargs:            keyword arguments for downloader.download() method.
+    :returns:                   yields values from the input downloader.download() method.
+    """
+
+    complete = False
+    reached_timeout = False
+    starttime = datetime.now()
+
+    if downloader is None:
+        downloader = BaseDownloader('espa_downloads')
+
+    while not complete and not reached_timeout:
+        # wait a while before the next ping and check timeout condition
+        elapsed_time = (datetime.now() - starttime).seconds
+        reached_timeout = elapsed_time > timeout
+        print("Elapsed time is {0}m".format(elapsed_time / 60.0))
+
+        # check order completion status, and list all items which ARE complete
+#            complete_items = self._complete_items(order_id, verbose=False)
+        
+        filters = {"status": ["complete", "ordered"]}  # Here, we ignore any purged orders
+        complete_items = espa_api('list-orders', uath=auth, body=filters)
+        for c in complete_items:
+            if isinstance(c, dict):
+                url = c["product_dload_url"]
+            elif isinstance(c, requests.Request):
+                url = c.json()["product_dload_url"]
+            else:
+                raise Exception("Could not interpret {0}".format(c))
+            yield downloader.download(url, **dlkwargs)
+        resp = espa_api('item-status/{0}'.format(order_id), uath=auth)
+        all_items = resp[order_id]
+
+
+        active_items = [item for item in all_items
+        if item['status'] != 'complete' and
+        item['status'] != 'error' and
+        item['status'] != 'unavailable']
+
+        complete = (len(active_items) < 1)
+        if not complete:
+            sleep(sleep_time)
 
 def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
     username = auth[0]
     password = auth[1]
-    client = Client(auth)
+#    client = Client(auth)
     def api_request(endpoint, verb='get', json=None, uauth=None):
         """
         Here we can see how easy it is to handle calls to a REST API that uses JSON
@@ -59,23 +130,7 @@ def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
         response = getattr(requests, verb)(host + endpoint, auth=auth_tup, json=json)
         return response.json()
     
-    def espa_api(endpoint, verb='get', body=None, uauth=None):
-        """ Suggested simple way to interact with the ESPA JSON REST API """
-        auth_tup = uauth if uauth else (username, password)
-        response = getattr(requests, verb)(host + endpoint, auth=auth_tup, json=body)
-        print('{} {}'.format(response.status_code, response.reason))
-        data = response.json()
-        if isinstance(data, dict):
-            messages = data.pop("messages", None)  
-            if messages:
-                print(json.dumps(messages, indent=4))
-        try:
-            response.raise_for_status()
-        except Exception as e:
-            print(e)
-            return None
-        else:
-            return data
+
 
     #=====set products=======
     l8_prods = ['sr','bt','cloud']
@@ -189,7 +244,9 @@ def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
     if l8_tiles:
         print("Download new data...")       
         #======Download data=========    
-        for download in client.download_order_gen(orderidNew):
+#        for download in client.download_order_gen(orderidNew):
+#            print(download)
+        for download in download_order_gen(orderidNew):
             print(download)
 
 def get_modis_lai(tiles,product,version,start_date,end_date,auth):    
