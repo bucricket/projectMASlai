@@ -149,7 +149,7 @@ class Client(BaseClient):
         else:
             items = self.get_item_status(order_id).json()
             if "orderid" in items.keys():  # if this funciton is nested, need to parse more
-                items = items["orderid"][order_id]
+                items = items[order_id]
             if isinstance(items, list):
                 for item in items:
                     if item["status"] == status:
@@ -226,7 +226,7 @@ class Client(BaseClient):
         returns list of items with active statuses, (not complete or error).
         can print summary if verbose is True.
         """
-        all_items = self.get_item_status(order_id).json()["orderid"][order_id]
+        all_items = self.get_item_status(order_id).json()[order_id]
         active_items = [item for item in all_items
                         if item['status'] != 'complete' and
                         item['status'] != 'error' and
