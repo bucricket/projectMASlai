@@ -139,7 +139,7 @@ def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
 
 
     #=====set products=======
-    l8_prods = ['sr','bt','cloud']
+    l8_prods = ['sr','bt']
     #=====search for data=======
     print("Searching...")
     sceneIDs = search(collection,loc[0],loc[1],start_date,end_date,cloud)
