@@ -101,7 +101,7 @@ def download_order_gen(order_id, auth, downloader=None, sleep_time=300, timeout=
         # check order completion status, and list all items which ARE complete
 #            complete_items = self._complete_items(order_id, verbose=False)
         
-        filters = {"status": ["complete", "ordered"]}  # Here, we ignore any purged orders
+        filters = {"status": ["complete"]}  # Here, we ignore any purged orders
         complete_items = espa_api('list-orders', uauth=auth, body=filters)
         for c in complete_items:
             if isinstance(c, dict):
