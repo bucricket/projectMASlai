@@ -118,7 +118,8 @@ def download_order_gen(order_id, auth, downloader=None, sleep_time=300, timeout=
         active_items = [item for item in all_items
         if item['status'] != 'complete' and
         item['status'] != 'error' and
-        item['status'] != 'unavailable']
+        item['status'] != 'unavailable' and 
+        item['status'] != 'purged']
 
         complete = (len(active_items) < 1)
         if not complete:
@@ -193,7 +194,7 @@ def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
         # =======order the data============
         resp = espa_api('order', verb='post',uauth=auth, body=order)
         print(json.dumps(resp, indent=4))
-        orderidNew = resp
+        orderidNew = resp['orderid']
                     
     if orderedIDs_completed:
         
