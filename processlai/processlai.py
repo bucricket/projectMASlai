@@ -178,7 +178,7 @@ def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
                     if not os.path.exists(linked_file):
                         os.symlink(file,linked_file)
 
-    print l8_tiles
+    
     
     if l8_tiles:
         print("Ordering new data...")
@@ -195,7 +195,9 @@ def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
         orderidNew = resp
                     
     if orderedIDs_completed:
-        print("downloading completed existing orders...")
+        
+        print("downloading completed existing orders.../n")
+        print orderedIDs_completed
         i = -1
         for orderid in orderedIDs_completed:
             i+=1
