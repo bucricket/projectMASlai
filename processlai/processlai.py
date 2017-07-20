@@ -183,14 +183,14 @@ def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
     if l8_tiles:
         print("Ordering new data...")
         #========setup order=========
-        order = espa_api('available-products', body=dict(inputs=l8_tiles))
+        order = espa_api('available-products',uauth=auth, body=dict(inputs=l8_tiles))
         for sensor in order.keys():
             if isinstance(order[sensor], dict) and order[sensor].get('inputs'):
                 order[sensor]['products'] = l8_prods
         
         order['format'] = 'gtiff'
         # =======order the data============
-        resp = espa_api('order', verb='post', body=order)
+        resp = espa_api('order', verb='post',uauth=auth, body=order)
         print(json.dumps(resp, indent=4))
         orderidNew = resp
                     
@@ -204,7 +204,7 @@ def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
             reached_TIMEOUT = False
             starttime = datetime.now()
             while not complete and not reached_TIMEOUT:
-                resp = espa_api('item-status/{0}'.format(orderid))
+                resp = espa_api('item-status/{0}'.format(orderid),uauth=auth)
                 for item in resp[orderid]:
                     if item.get('name')==sceneID:
                         url = item.get('product_dload_url')                      
@@ -252,7 +252,7 @@ def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
         #======Download data=========    
 #        for download in client.download_order_gen(orderidNew):
 #            print(download)
-        for download in download_order_gen(orderidNew):
+        for download in download_order_gen(orderidNew,auth):
             print(download)
 
 def get_modis_lai(tiles,product,version,start_date,end_date,auth):    
