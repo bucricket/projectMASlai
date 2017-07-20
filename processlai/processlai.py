@@ -102,7 +102,7 @@ def download_order_gen(order_id, auth, downloader=None, sleep_time=300, timeout=
 #            complete_items = self._complete_items(order_id, verbose=False)
         
         filters = {"status": ["complete", "ordered"]}  # Here, we ignore any purged orders
-        complete_items = espa_api('list-orders', uath=auth, body=filters)
+        complete_items = espa_api('list-orders', uauth=auth, body=filters)
         for c in complete_items:
             if isinstance(c, dict):
                 url = c["product_dload_url"]
@@ -111,7 +111,7 @@ def download_order_gen(order_id, auth, downloader=None, sleep_time=300, timeout=
             else:
                 raise Exception("Could not interpret {0}".format(c))
             yield downloader.download(url, **dlkwargs)
-        resp = espa_api('item-status/{0}'.format(order_id), uath=auth)
+        resp = espa_api('item-status/{0}'.format(order_id), uauth=auth)
         all_items = resp[order_id]
 
 
