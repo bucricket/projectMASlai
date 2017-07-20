@@ -161,11 +161,12 @@ def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
                     if not ordered_data.empty:
                         if np.sum(ordered_data.productID==sceneID)>0:
                             completed_test = (ordered_data.productID==sceneID) & (ordered_data.status=='complete')
+                            not_complete_test = (ordered_data.productID==sceneID) & (ordered_data.status!='complete')
                             if len(ordered_data[completed_test])>0:
-                                orderedIDs_completed.append(list(ordered_data[completed_test])[0])
+                                orderedIDs_completed.append(list(ordered_data.orderid[completed_test])[0])
                                 sceneIDs_completed.append(sceneID)
                             else:
-                                orderedIDs_not_completed.append(list(ordered_data[(ordered_data.productID==sceneID)]['orderid'])[-1])
+                                orderedIDs_not_completed.append(list(ordered_data.orderid[not_complete_test][0]))
                                 sceneIDs_not_completed.append(sceneID)
                         else:
                             l8_tiles.append(sceneID)
@@ -196,7 +197,7 @@ def get_landsat_data(collection,loc,start_date,end_date,auth,cloud):
                     
     if orderedIDs_completed:
         
-        print("downloading completed existing orders.../n")
+        print("downloading completed existing orders...")
         print orderedIDs_completed
         i = -1
         for orderid in orderedIDs_completed:
