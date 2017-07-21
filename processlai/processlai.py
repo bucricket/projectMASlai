@@ -351,7 +351,7 @@ def sample():
             os.mkdir(lai_path)
         sam_file = os.path.join(lai_path,"SR_LAI.%s.%s.MCD15A3H_A%s%s.txt" %(date,sceneID,year,mdoy))
         #====convert the qa to cfmask=====
-        datFile_qa = fstem+"_%s.%s.dat" % ("qa_pixel",bands[6])
+        datFile_qa = fstem+"_%s.%s.dat" % ("pixel_qa",bands[6])
         datFile_cfmask = fstem+"_%s.%s.dat" % (l8bands[6],bands[6])
         subprocess.call(["%s" % convert, "-lndsr", "%s" % datFile_qa, "-cmask", "%s" % datFile_cfmask])
         
