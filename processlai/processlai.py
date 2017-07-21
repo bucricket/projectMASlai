@@ -21,8 +21,8 @@ import getpass
 import keyring
 import json
 from pyproj import Proj
-from .utils import folders,search,check_order_cache
-from .Clients import Client
+from .utils import folders,search,check_order_cache,writeArray2Tiff
+#from .Clients import Client
 from .Downloaders import BaseDownloader
 import pycurl
 from .landsatTools import landsat_metadata
@@ -42,6 +42,7 @@ Folders = folders(base)
 modis_base = Folders['modis_base']
 landsat_SR = Folders['landsat_SR']
 landsat_LAI = Folders['landsat_LAI']
+landsat_NDVI = Folders['landsat_NDVI']
 landsat_temp = os.path.join(landsat_SR,'temp')
 if not os.path.exists(landsat_temp):
     os.mkdir(landsat_temp)
@@ -431,6 +432,7 @@ def compute():
         # create a folder for lai if it does not exist
         #lai_path = os.path.join(landsat_LAI,'%s' % sceneID[9:16])
         lai_path = os.path.join(landsat_LAI,'%s' % sceneID[3:9])
+        ndvi_path = os.path.join(landsat_NDVI,'%s' % sceneID[3:9])
         if not os.path.exists(lai_path):
             os.mkdir(lai_path)
         
@@ -452,7 +454,12 @@ def compute():
         file.close()
         
         subprocess.call(["%s" % lndbio , "%s" % fn])
-        shutil.move(laiFN,os.path.join(lai_path,"lndlai.%s.hdf" % sceneID))
+        #====convert to geotiff=========
+        outlaifn = os.path.join(lai_path,'%s_lai.tiff' % sceneID)
+        outndvifn = os.path.join(ndvi_path,'%s_ndvi.tiff' % sceneID)
+        subprocess.call(["gdal_translate", 'HDF4_EOS:EOS_GRID:"%s":LANDSAT:LAI' % laiFN, "%s" % outlaifn])
+        subprocess.call(["gdal_translate", 'HDF4_EOS:EOS_GRID:"%s":LANDSAT:NDVI' % laiFN, "%s" % outndvifn])
+#        shutil.move(laiFN,os.path.join(lai_path,"lndlai.%s.hdf" % sceneID))
         os.remove(fn)
     #=====CLEANING UP========
     filelist = [ f for f in os.listdir(landsat_LAI) if f.startswith("lndsr_modlai_samples") ]

@@ -12,6 +12,7 @@ import requests
 import json
 from datetime import datetime
 import wget
+from osgeo import gdal,osr
 
 # The current URL hosting the ESPA interfaces has reached a stable version 1.0
 host = 'https://espa.cr.usgs.gov/api/v1/'
@@ -26,10 +27,14 @@ def folders(base):
     landsat_LAI = os.path.join(landsat_database,'LAI')
     if not os.path.exists(landsat_LAI):
         os.makedirs(landsat_LAI)
+    landsat_NDVI = os.path.join(landsat_database,'NDVI')
+    if not os.path.exists(landsat_NDVI):
+        os.makedirs(landsat_NDVI)
     modis_base = os.path.join(base,'data','MODIS')
     if not os.path.exists(modis_base):
         os.mkdir(modis_base)
-    out = {'landsat_SR':landsat_SR,'modis_base':modis_base,'landsat_LAI':landsat_LAI}
+    out = {'landsat_SR':landsat_SR,'modis_base':modis_base,'landsat_LAI':landsat_LAI,
+           'landsat_NDVI':landsat_NDVI}
     return out
 
 
@@ -130,6 +135,35 @@ def check_order_cache(auth):
     
     return outDF
 
+def writeArray2Tiff(data,res,UL,inProjection,outfile,outFormat):
+
+    xres = res[0]
+    yres = res[1]
+
+    ysize = data.shape[0]
+    xsize = data.shape[1]
+
+    ulx = UL[0] #- (xres / 2.)
+    uly = UL[1]# - (yres / 2.)
+    driver = gdal.GetDriverByName('GTiff')
+    ds = driver.Create(outfile, xsize, ysize, 1, outFormat)
+    #ds = driver.Create(outfile, xsize, ysize, 1, gdal.GDT_Int16)
+    
+    srs = osr.SpatialReference()
+    
+    if isinstance(inProjection, basestring):        
+        srs.ImportFromProj4(inProjection)
+    else:
+        srs.ImportFromEPSG(inProjection)
+        
+    ds.SetProjection(srs.ExportToWkt())
+    
+    gt = [ulx, xres, 0, uly, 0, -yres ]
+    ds.SetGeoTransform(gt)
+    
+    ds.GetRasterBand(1).WriteArray(data)
+    #ds = None
+    ds.FlushCache() 
 # helper function
 def _test_outside(testx, lower, upper):
     """
