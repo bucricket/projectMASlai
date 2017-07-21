@@ -468,7 +468,7 @@ def compute():
                          "--type=UInt16", "--overwrite", '--calc="A"'])
 #        shutil.move(laiFN,os.path.join(lai_path,"lndlai.%s.hdf" % sceneID))
         os.remove(fn)
-        os.remove('./temp.tif')
+        os.remove(tempfn)
     #=====CLEANING UP========
     filelist = [ f for f in os.listdir(landsat_LAI) if f.startswith("lndsr_modlai_samples") ]
     for f in filelist:
