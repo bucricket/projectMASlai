@@ -64,6 +64,12 @@ os.chdir(mkPath)
 subprocess.call(["scons","-Q","--prefix=%s" % prefix,"install"])
 subprocess.call(["scons","-c"])
 
+print ("installing lndqa2cfmask...")
+mkPath = os.path.join(processDir,'source','Landsat_LAI','qa2fmask')
+os.chdir(mkPath)
+subprocess.call(["scons","-Q","--prefix=%s" % prefix,"install"])
+subprocess.call(["scons","-c"])
+
 print ("installing Cubist...")
 mkPath = os.path.join(processDir,'source','Cubist')
 os.chdir(mkPath)
