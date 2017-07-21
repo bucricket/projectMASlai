@@ -461,10 +461,10 @@ def compute():
         outndvifn = os.path.join(ndvi_path,'%s_ndvi.tiff' % sceneID)
         tempfn = os.path.join(lai_path,'temp.tiff')
         subprocess.call(["gdal_translate", 'HDF4_EOS:EOS_GRID:"%s":LANDSAT:LAI' % laiFN, "%s" % tempfn])
-        subprocess.call(["gdal_calc.py", "-A temp.tif",  "--outfile=%s" % outlaifn,
+        subprocess.call(["gdal_calc.py", "-A %s" % tempfn,  "--outfile=%s" % outlaifn,
                                  "--type=UInt16", "--overwrite", '--calc="A"'])
         subprocess.call(["gdal_translate", 'HDF4_EOS:EOS_GRID:"%s":LANDSAT:NDVI' % laiFN, "%s" % tempfn])
-        subprocess.call(["gdal_calc.py", "-A temp.tif",  "--outfile=%s" % outndvifn, 
+        subprocess.call(["gdal_calc.py", "-A %s" % tempfn,  "--outfile=%s" % outndvifn, 
                          "--type=UInt16", "--overwrite", '--calc="A"'])
 #        shutil.move(laiFN,os.path.join(lai_path,"lndlai.%s.hdf" % sceneID))
         os.remove(fn)
