@@ -432,9 +432,11 @@ def compute():
         # create a folder for lai if it does not exist
         #lai_path = os.path.join(landsat_LAI,'%s' % sceneID[9:16])
         lai_path = os.path.join(landsat_LAI,'%s' % sceneID[3:9])
-        ndvi_path = os.path.join(landsat_NDVI,'%s' % sceneID[3:9])
         if not os.path.exists(lai_path):
             os.mkdir(lai_path)
+        ndvi_path = os.path.join(landsat_NDVI,'%s' % sceneID[3:9])
+        if not os.path.exists(ndvi_path):
+            os.mkdir(ndvi_path)
         
         start_date='200'
         end_date = '300'
@@ -457,10 +459,11 @@ def compute():
         #====convert to geotiff=========
         outlaifn = os.path.join(lai_path,'%s_lai.tiff' % sceneID)
         outndvifn = os.path.join(ndvi_path,'%s_ndvi.tiff' % sceneID)
-        subprocess.call(["gdal_translate", 'HDF4_EOS:EOS_GRID:"%s":LANDSAT:LAI' % laiFN, "./temp.tif"])
+        tempfn = os.path.join(lai_path,'temp.tiff')
+        subprocess.call(["gdal_translate", 'HDF4_EOS:EOS_GRID:"%s":LANDSAT:LAI' % laiFN, "%s" % tempfn])
         subprocess.call(["gdal_calc.py", "-A temp.tif",  "--outfile=%s" % outlaifn,
                                  "--type=UInt16", "--overwrite", '--calc="A"'])
-        subprocess.call(["gdal_translate", 'HDF4_EOS:EOS_GRID:"%s":LANDSAT:NDVI' % laiFN, "./temp.tif"])
+        subprocess.call(["gdal_translate", 'HDF4_EOS:EOS_GRID:"%s":LANDSAT:NDVI' % laiFN, "%s" % tempfn])
         subprocess.call(["gdal_calc.py", "-A temp.tif",  "--outfile=%s" % outndvifn, 
                          "--type=UInt16", "--overwrite", '--calc="A"'])
 #        shutil.move(laiFN,os.path.join(lai_path,"lndlai.%s.hdf" % sceneID))
