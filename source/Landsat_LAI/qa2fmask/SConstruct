@@ -1,0 +1,32 @@
+#!python
+
+import os
+import platform
+import subprocess
+
+
+AddOption('--prefix',
+          dest='prefix',
+          type='string',
+          nargs=1,
+          action='store',
+          metavar='DIR',
+          help='installation prefix')
+env = Environment(PREFIX = GetOption('prefix'))
+#prefix = GetOption('prefix')
+prefix  = os.environ.get('PREFIX')
+base = os.path.abspath(os.path.join(prefix,os.pardir))
+base = os.path.join(base,'work')
+sourcePath = os.path.join(base,'source')
+binPath = os.path.join(prefix,'bin')
+
+#if not platform.system()=='Linux':
+env.Replace(CC = os.path.join(binPath,'gcc'))
+    
+env.Append(CCFLAGS = ['-static'])
+env.Append(LIBPATH = [os.path.join(sourcePath,'lib')])
+env.Append(CPPPATH = [os.path.join(sourcePath,'include')])
+env.Append(LIBS = ['Gctp','hdfeos','mfhdf','df','z','sz','jpeg','m','geotiff','tiff'])
+lndqa2fmask = env.Program(target='lndqa2fmask', source=['lndqa2fmask.c'])
+env.Install(binPath, lndqa2fmask)
+env.Alias('install', binPath)
