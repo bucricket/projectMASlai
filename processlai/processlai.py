@@ -300,7 +300,7 @@ def latlon_2modis_tile(lat,lon):
 def geotiff_2envi():   
     #geotiffConvert = 'GeoTiff2ENVI'
     bands = ["blue","green","red","nir","swir1","swir2","cloud"]
-    l8bands = ["sr_band2","sr_band3","sr_band4","sr_band5","sr_band6","sr_band7","cfmask"] 
+    l8bands = ["sr_band2","sr_band3","sr_band4","sr_band5","sr_band6","sr_band7","pixel_qa"] 
     
     landsat_files = glob.glob(os.path.join(landsat_temp,"*_MTL.txt"))
     for i in range(len(landsat_files)):
@@ -318,6 +318,7 @@ def geotiff_2envi():
 
 def sample():    
     sample = 'lndlai_sample'
+    convert = 'lndqa2fmask'
     bands = ["blue","green","red","nir","swir1","swir2","cloud"]
     l8bands = ["sr_band2","sr_band3","sr_band4","sr_band5","sr_band6","sr_band7","cfmask"] 
     
@@ -349,6 +350,10 @@ def sample():
         if not os.path.exists(lai_path):
             os.mkdir(lai_path)
         sam_file = os.path.join(lai_path,"SR_LAI.%s.%s.MCD15A3H_A%s%s.txt" %(date,sceneID,year,mdoy))
+        #====convert the qa to cfmask=====
+        datFile_qa = fstem+"_%s.%s.dat" % ("qa_pixel",bands[i])
+        datFile_cfmask = fstem+"_%s.%s.dat" % (l8bands[i],bands[i])
+        subprocess.call(["%s" % convert, "%s" % datFile_qa, "%s" % datFile_cfmask])
         
         for i in range(len(modFiles)):  
             fn = os.path.join(lai_path,"slai%d.inp" % i)
