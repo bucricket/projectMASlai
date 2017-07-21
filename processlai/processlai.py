@@ -457,10 +457,15 @@ def compute():
         #====convert to geotiff=========
         outlaifn = os.path.join(lai_path,'%s_lai.tiff' % sceneID)
         outndvifn = os.path.join(ndvi_path,'%s_ndvi.tiff' % sceneID)
-        subprocess.call(["gdal_translate", 'HDF4_EOS:EOS_GRID:"%s":LANDSAT:LAI' % laiFN, "%s" % outlaifn])
-        subprocess.call(["gdal_translate", 'HDF4_EOS:EOS_GRID:"%s":LANDSAT:NDVI' % laiFN, "%s" % outndvifn])
+        subprocess.call(["gdal_translate", 'HDF4_EOS:EOS_GRID:"%s":LANDSAT:LAI' % laiFN, "./temp.tif"])
+        subprocess.call(["gdal_calc.py", "-A temp.tif",  "--outfile=%s" % outlaifn,
+                                 "--type=UInt16", "--overwrite", '--calc="A"'])
+        subprocess.call(["gdal_translate", 'HDF4_EOS:EOS_GRID:"%s":LANDSAT:NDVI' % laiFN, "./temp.tif"])
+        subprocess.call(["gdal_calc.py", "-A temp.tif",  "--outfile=%s" % outndvifn, 
+                         "--type=UInt16", "--overwrite", '--calc="A"'])
 #        shutil.move(laiFN,os.path.join(lai_path,"lndlai.%s.hdf" % sceneID))
         os.remove(fn)
+        os.remove('./temp.tif')
     #=====CLEANING UP========
     filelist = [ f for f in os.listdir(landsat_LAI) if f.startswith("lndsr_modlai_samples") ]
     for f in filelist:
