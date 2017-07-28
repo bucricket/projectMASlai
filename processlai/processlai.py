@@ -21,7 +21,7 @@ import getpass
 import keyring
 import json
 from pyproj import Proj
-from .utils import folders,search,check_order_cache,writeArray2Tiff
+from .utils import folders,search,check_order_cache
 #from .Clients import Client
 from .Downloaders import BaseDownloader
 import pycurl
@@ -43,6 +43,7 @@ modis_base = Folders['modis_base']
 landsat_SR = Folders['landsat_SR']
 landsat_LAI = Folders['landsat_LAI']
 landsat_NDVI = Folders['landsat_NDVI']
+landsat_Mask = Folders['landsat_Mask']
 landsat_temp = os.path.join(landsat_SR,'temp')
 if not os.path.exists(landsat_temp):
     os.mkdir(landsat_temp)
@@ -437,7 +438,9 @@ def compute():
         ndvi_path = os.path.join(landsat_NDVI,'%s' % sceneID[3:9])
         if not os.path.exists(ndvi_path):
             os.mkdir(ndvi_path)
-        
+        cfmask_path = os.path.join(landsat_Mask,'%s' % sceneID[3:9])
+        if not os.path.exists(cfmask_path):
+            os.mkdir(cfmask_path)
         start_date='200'
         end_date = '300'
         filestem = os.path.join(landsat_LAI,"lndsr_modlai_samples.combined_%s-%s" %(start_date,end_date))
@@ -459,11 +462,14 @@ def compute():
         #====convert to geotiff=========
         outlaifn = os.path.join(lai_path,'%s_lai.tiff' % sceneID)
         outndvifn = os.path.join(ndvi_path,'%s_ndvi.tiff' % sceneID)
+        outcfmaskfn = os.path.join(cfmask_path,'%s_ndvi.tiff' % sceneID)
 #        tempfn = os.path.join(lai_path,'temp.tiff')
         subprocess.call(["gdal_translate", 'HDF4_EOS:EOS_GRID:"%s":LANDSAT:LAI' % laiFN, "%s" % outlaifn])
 #        subprocess.call(["gdal_calc.py", "-A %s" % tempfn,  "--outfile=%s" % outlaifn,
 #                                 "--type=UInt16", "--overwrite", '--calc="A"'])
         subprocess.call(["gdal_translate", 'HDF4_EOS:EOS_GRID:"%s":LANDSAT:NDVI' % laiFN, "%s" % outndvifn])
+        
+        subprocess.call(["gdal_translate", 'HDF4_EOS:EOS_GRID:"%s":LANDSAT:cfmask' % laiFN, "%s" % outcfmaskfn])
 #        subprocess.call(["gdal_calc.py", "-A %s" % tempfn,  "--outfile=%s" % outndvifn, 
 #                         "--type=UInt16", "--overwrite", '--calc="A"'])
 #        shutil.move(laiFN,os.path.join(lai_path,"lndlai.%s.hdf" % sceneID))
