@@ -462,7 +462,7 @@ def compute():
         #====convert to geotiff=========
         outlaifn = os.path.join(lai_path,'%s_lai.tiff' % sceneID)
         outndvifn = os.path.join(ndvi_path,'%s_ndvi.tiff' % sceneID)
-        outcfmaskfn = os.path.join(cfmask_path,'%s_ndvi.tiff' % sceneID)
+        outcfmaskfn = os.path.join(cfmask_path,'%s_Mask.tiff' % sceneID)
 #        tempfn = os.path.join(lai_path,'temp.tiff')
         subprocess.call(["gdal_translate", 'HDF4_EOS:EOS_GRID:"%s":LANDSAT:LAI' % laiFN, "%s" % outlaifn])
 #        subprocess.call(["gdal_calc.py", "-A %s" % tempfn,  "--outfile=%s" % outlaifn,
