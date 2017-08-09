@@ -502,9 +502,10 @@ def get_LAI(collection,loc,start_date,end_date,usgs_user,usgs_pass,earth_user,
             os.mkdir(folder)
     
         for filename in glob.glob(os.path.join(inputFN, '*.*')):
-            shutil.copy(filename, folder)  
-            os.symlink(os.path.join(folder,filename.split(os.sep)[-1]),
-            os.path.join(landsat_temp,filename.split(os.sep)[-1]))
+            shutil.copy(filename, folder) 
+            if not os.path.exists(os.path.join(landsat_temp,filename.split(os.sep)[-1])):
+                os.symlink(os.path.join(folder,filename.split(os.sep)[-1]),
+                os.path.join(landsat_temp,filename.split(os.sep)[-1]))
  
     if len(folders_2move)>0:
             #======Clean up folder===============================
