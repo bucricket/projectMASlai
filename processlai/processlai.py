@@ -20,7 +20,7 @@ import getpass
 import keyring
 from pyproj import Proj
 from .utils import folders
-from getlandsatdata import search
+from getlandsatdata import getlandsatdata
 import pycurl
 from .landsatTools import landsat_metadata
 import logging
@@ -458,7 +458,7 @@ def get_LAI(loc,start_date,end_date,usgs_user,usgs_pass,earth_user,
     tiles = "h%02dv%02d" %(h,v)
     #====search for available data=============================================
     available = 'Y'
-    search_df = search(loc[0],loc[1],start_date,end_date,cloud,available,cacheDir,sat)
+    search_df = getlandsatdata.search(loc[0],loc[1],start_date,end_date,cloud,available,cacheDir,sat)
     productIDs = search_df.LANDSAT_PRODUCT_ID
     paths = search_df.local_path
     # download MODIS LAI over the same area and time
