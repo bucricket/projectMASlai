@@ -20,7 +20,7 @@ import getpass
 import keyring
 from pyproj import Proj
 from .utils import folders
-from projectmasgetlandsat import search
+from getlandsatdata import search
 import pycurl
 from .landsatTools import landsat_metadata
 import logging
