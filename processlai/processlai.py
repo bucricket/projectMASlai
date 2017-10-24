@@ -33,7 +33,7 @@ host = 'https://espa.cr.usgs.gov/api/v1/'
 TIMEOUT=86400
 
 base = os.getcwd()
-cacheDir = os.path.abspath(os.path.join(base,os.pardir,"SATELLITE_DATA"))
+cacheDir = os.path.abspath(os.path.join(base,os.pardir,"SATELLITE_DATA","LANDSAT"))
 Folders = folders(base)   
 modis_base = Folders['modis_base']
 landsat_SR = Folders['landsat_SR']
