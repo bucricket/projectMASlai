@@ -7,16 +7,7 @@ Created on Fri Jan  6 11:38:31 2017
 """
 import os
 import numpy as np
-import pandas as pd
-import requests
-import json
-from datetime import datetime
-import wget
 from osgeo import gdal,osr
-
-# The current URL hosting the ESPA interfaces has reached a stable version 1.0
-host = 'https://espa.cr.usgs.gov/api/v1/'
-#from numba import jit
 
 def folders(base):
     database = os.path.join(base,'data')
@@ -41,102 +32,6 @@ def folders(base):
     return out
 
 
-def search(collection,lat,lon,start_date,end_date,cloud):
-    end = datetime.strptime(end_date, '%Y-%m-%d')
-    # this is a landsat-util work around when it fails
-    if collection==0:
-        metadataUrl = 'https://landsat.usgs.gov/landsat/metadata_service/bulk_metadata_files/LANDSAT_8.csv'
-    else:
-        metadataUrl = 'https://landsat.usgs.gov/landsat/metadata_service/bulk_metadata_files/LANDSAT_8_C1.csv'
-    fn  = metadataUrl.split(os.sep)[-1]
-    # looking to see if metadata CSV is available and if its up to the date needed
-    if os.path.exists(fn):
-        d = datetime.fromtimestamp(os.path.getmtime(fn))
-        if ((end.year>d.year) and (end.month>d.month) and (end.day>d.day)):
-            wget.download(metadataUrl)
-    else:
-        wget.download(metadataUrl)
-        
-    metadata= pd.read_csv(fn)
-    if collection==0:
-        output = metadata[(metadata.acquisitionDate >= start_date) & (metadata.acquisitionDate < end_date) & 
-             (metadata.upperLeftCornerLatitude > lat ) & (metadata.upperLeftCornerLongitude < lon )& 
-             (metadata.lowerRightCornerLatitude < lat ) & (metadata.lowerRightCornerLongitude > lon)  & 
-             (metadata.cloudCoverFull <= cloud)].sceneID
-    else:
-        output = metadata[(metadata.acquisitionDate >= start_date) & (metadata.acquisitionDate < end_date) & 
-             (metadata.upperLeftCornerLatitude > lat ) & (metadata.upperLeftCornerLongitude < lon )& 
-             (metadata.lowerRightCornerLatitude < lat ) & (metadata.lowerRightCornerLongitude > lon)  & 
-             (metadata.cloudCoverFull <= cloud)].LANDSAT_PRODUCT_ID
-    return output.values
-
-def check_order_cache(auth):
-    # This program checks the last month of orders from ESPA
-    username = auth[0]
-    password = auth[1]
-    def api_request(endpoint, verb='get', json=None, uauth=None):
-        """
-        Here we can see how easy it is to handle calls to a REST API that uses JSON
-        """
-        auth_tup = uauth if uauth else (username, password)
-        response = getattr(requests, verb)(host + endpoint, auth=auth_tup, json=json)
-        return response.json()
-    
-    def espa_api(endpoint, verb='get', body=None, uauth=None):
-        """ Suggested simple way to interact with the ESPA JSON REST API """
-        auth_tup = uauth if uauth else (username, password)
-        response = getattr(requests, verb)(host + endpoint, auth=auth_tup, json=body)
-        print('{} {}'.format(response.status_code, response.reason))
-        data = response.json()
-        if isinstance(data, dict):
-            messages = data.pop("messages", None)  
-            if messages:
-                print(json.dumps(messages, indent=4))
-        try:
-            response.raise_for_status()
-        except Exception as e:
-            print(e)
-            return None
-        else:
-            return data
-    
-#    usr = api_request('user')
-    
-#    order_list = api_request('list-orders/%s' % usr['email'])
-    filters = {"status": ["complete", "ordered"]}  # Here, we ignore any purged orders
-    order_list = espa_api('list-orders', body=filters)
-    orderID =[]
-    fName = []
-    order_status=[]
-#    for i in range(len(order_list['orders'])):
-#        orderid = order_list['orders'][i]
-    for i in range(len(order_list)):
-        orderid = order_list[i]
-#        date = orderid.split('-')[1]
-#        if len(date)>8:
-#            continue
-#        year = int(date[4:])
-#        day = int(date[2:4])
-#        month = int(date[:2])
-#        dOrder = datetime(year,month,day)
-#        delt_date = (datetime.now()-dOrder).days
-#        if delt_date>10:
-#            continue
-#        resp = api_request('item-status/{0}'.format(orderid))
-        resp = espa_api('item-status/{0}'.format(orderid))
-        ddd = json.loads(json.dumps(resp))
-#        if not ddd['orderid']['%s' % orderid][0]['status']=='purged':
-        for j in range(len(ddd['%s' % orderid])):
-            fname = ddd['%s' % orderid][j]['name']
-            status = ddd['%s' % orderid][j]['status']
-            orderID.append(orderid)
-            fName.append(fname)
-            order_status.append(status)
-                
-    output = {'orderid':orderID,'productID':fName,'status':order_status}
-    outDF = pd.DataFrame(output)  
-    
-    return outDF
 
 def writeArray2Tiff(data,res,UL,inProjection,outfile,outFormat):
 
