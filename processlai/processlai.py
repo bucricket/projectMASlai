@@ -164,6 +164,7 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
         os.makedirs(product_path)
     try:
         out_df = searchModisDB(tiles,start_date,end_date,product) 
+        pass
         filenames = []
         for i in range(len(out_df)):
             year = int(out_df.YEAR[i])
@@ -183,7 +184,8 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
             modisOgg.dayDownload(day, listFilesDown)
             modisOgg.closeFilelist()
             
-    except ValueError:
+    except:
+        
         modisOgg = downModis(url="https://e4ftl01.cr.usgs.gov", destinationFolder=product_path, 
                              user=auth[0], password=auth[1], tiles=tiles, path=folder, 
                              product="%s.%s" % (product,version),today=start_date,enddate=end_date)
