@@ -34,7 +34,7 @@ host = 'https://espa.cr.usgs.gov/api/v1/'
 TIMEOUT=86400
 
 base = os.getcwd()
-cacheDir = os.path.abspath(os.path.join(base,os.pardir,"SATELLITE_DATA","LANDSAT"))
+cacheDir = os.path.abspath(os.path.join(base,os.pardir,"SATELLITE_DATA"))
 Folders = folders(base)   
 modis_base = Folders['modis_base']
 landsat_SR = Folders['landsat_SR']
@@ -45,7 +45,7 @@ landsat_temp = os.path.join(landsat_SR,'temp')
 if not os.path.exists(landsat_temp):
     os.mkdir(landsat_temp)
 
-def updateModisDB(filenames,cacheDir):
+def updateModisDB(filenames,CacheDir):
     
     db_fn = os.path.join(cacheDir,"modis_db.db")
     fn = filenames[0].split(os.sep)[-1]
@@ -99,7 +99,11 @@ def updateLandsatProductsDB(landsatDB,filenames,cacheDir,product):
         conn.close()
     else:
         conn = sqlite3.connect( db_fn )
-        orig_df = pd.read_sql_query("SELECT * from %s" % product,conn)
+        try:            
+            orig_df = pd.read_sql_query("SELECT * from %s" % product,conn)
+        except ValueError:
+            orig_df = pd.DataFrame()
+            
         landsat_dict = {"acquisitionDate":date,"upperLeftCornerLatitude":ullat,
                       "upperLeftCornerLongitude":ullon,
                       "lowerRightCornerLatitude":lllat,
@@ -110,7 +114,7 @@ def updateLandsatProductsDB(landsatDB,filenames,cacheDir,product):
         orig_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
         conn.close()
         
-def get_modis_lai(tiles,product,version,start_date,end_date,auth):  
+def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):  
     startdd = datetime.datetime.strptime(start_date, '%Y-%m-%d')
     enddd = datetime.datetime.strptime(end_date, '%Y-%m-%d')
     numDays= (enddd-startdd).days
@@ -460,7 +464,7 @@ def train(paths,productIDs,MODIS_product):
 #    for f in filelist:
 #        os.remove(os.path.join(landsat_LAI,f))
 
-def compute(paths,productIDs,MODIS_product,sat):    
+def compute(paths,productIDs,MODIS_product,sat,cacheDir):    
     lndbio ='lndlai_compute'
     bands = ["blue","green","red","nir","swir1","swir2","cloud"]
     l8bands = ["sr_band2","sr_band3","sr_band4","sr_band5","sr_band6","sr_band7","cfmask"] 
@@ -520,7 +524,9 @@ def compute(paths,productIDs,MODIS_product,sat):
     for f in filelist:
         os.remove(os.path.join(landsat_LAI,f))    
     return lai_fns,ndvi_fns,mask_fns
-def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):    
+def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir): 
+    landsatCacheDir = os.path.join(cacheDir,"LANDSAT")
+    modisCacheDir = os.path.join(cacheDir,"MODIS")
     # find MODIS tiles that cover landsat scene
     # MODIS products   
     MODIS_product = 'MCD15A3H'
@@ -529,13 +535,13 @@ def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     tiles = "h%02dv%02d" %(h,v)
     #====search for available data=============================================
     available = 'Y'
-    search_df = getlandsatdata.search(loc[0],loc[1],start_date,end_date,cloud,available,cacheDir,sat)
+    search_df = getlandsatdata.search(loc[0],loc[1],start_date,end_date,cloud,available,landsatCacheDir,sat)
     productIDs = search_df.LANDSAT_PRODUCT_ID
     paths = search_df.local_file_path   
     print(productIDs)
     # download MODIS LAI over the same area and time
     print("Downloading MODIS data...")
-#    get_modis_lai(tiles,MODIS_product,version,start_date,end_date,("%s"% earth_user,"%s"% earth_pass))
+    get_modis_lai(tiles,MODIS_product,version,start_date,end_date,("%s"% earth_user,"%s"% earth_pass),modisCacheDir)
     print(paths)
     # Convert Landsat SR downloads to ENVI format
     # Note:  May be some warnings about unknown field - ignore.
@@ -549,11 +555,11 @@ def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     # Compute Landsat LAI
     print("Computing Landsat LAI...")
     train(paths,productIDs,MODIS_product)
-    lai_fns,ndvi_fns,mask_fns = compute(paths,productIDs,MODIS_product,sat)  
+    lai_fns,ndvi_fns,mask_fns = compute(paths,productIDs,MODIS_product,sat,landsatCacheDir)  
     
-    updateLandsatProductsDB(search_df,lai_fns,cacheDir,'LAI')
-    updateLandsatProductsDB(search_df,ndvi_fns,cacheDir,'NDVI')
-    updateLandsatProductsDB(search_df,mask_fns,cacheDir,'CF_MASK')
+    updateLandsatProductsDB(search_df,lai_fns,landsatCacheDir,'LAI')
+    updateLandsatProductsDB(search_df,ndvi_fns,landsatCacheDir,'NDVI')
+    updateLandsatProductsDB(search_df,mask_fns,landsatCacheDir,'CF_MASK')
 
 def main():
     # Get time and location from user
