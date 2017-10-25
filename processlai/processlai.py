@@ -180,7 +180,7 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
             day = modisOgg.getListDays()[0]
             listAllFiles = modisOgg.getFilesList(day)
             listFilesDown = modisOgg.checkDataExist(listAllFiles)
-            filenames.append(os.path.join(product_path,listFilesDown[0]))
+            filenames.append(os.path.join(product_path,listFilesDown))
             modisOgg.dayDownload(day, listFilesDown)
             modisOgg.closeFilelist()
             
@@ -206,7 +206,7 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
                 dayIn = '%d.%02d.%02d' % (year,month,day)
                 listNewFile = modisOgg.getFilesList(dayIn)
                 listFilesDown = modisOgg.checkDataExist(listNewFile)
-                filenames.append(os.path.join(product_path,listFilesDown[0]))
+                filenames.append(os.path.join(product_path,listFilesDown))
                 print(listFilesDown)
                 modisOgg.dayDownload(dayIn, listFilesDown)
     #        modisOgg.downloadsAllDay()
