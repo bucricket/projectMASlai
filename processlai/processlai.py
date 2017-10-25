@@ -162,52 +162,54 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
     product_path = os.path.join(cacheDir,product)   
     if not os.path.exists(product_path):
         os.makedirs(product_path)
-    out_df = searchModisDB(tiles,start_date,end_date,product)   
-#    modisOgg = downModis(url="https://e4ftl01.cr.usgs.gov", destinationFolder=product_path, 
-#                         user=auth[0], password=auth[1], tiles=tiles, path=folder, 
-#                         product="%s.%s" % (product,version),today=start_date,enddate=end_date)
-    filenames = []
-    for i in range(len(out_df)):
-        year = int(out_df.YEAR[i])
-        doy = int(out_df.DOY[i])
-        fdate = datetime.date.fromordinal(datetime.date(year, 1, 1).toordinal() + doy - 1).isoformat()
-        modisOgg = downModis(url="https://e4ftl01.cr.usgs.gov", user=auth[0],
-                                       password=auth[1],
-                                       destinationFolder=product_path,
-                                       tiles=tiles, path=folder,
-                                       product="%s.%s" % (product,version), delta=1,
-                                       today=fdate)
+    try:
+        out_df = searchModisDB(tiles,start_date,end_date,product) 
+        filenames = []
+        for i in range(len(out_df)):
+            year = int(out_df.YEAR[i])
+            doy = int(out_df.DOY[i])
+            fdate = datetime.date.fromordinal(datetime.date(year, 1, 1).toordinal() + doy - 1).isoformat()
+            modisOgg = downModis(url="https://e4ftl01.cr.usgs.gov", user=auth[0],
+                                           password=auth[1],
+                                           destinationFolder=product_path,
+                                           tiles=tiles, path=folder,
+                                           product="%s.%s" % (product,version), delta=1,
+                                           today=fdate)
+            modisOgg.connect()
+            day = modisOgg.getListDays()[0]
+            listAllFiles = modisOgg.getFilesList(day)
+            listFilesDown = modisOgg.checkDataExist(listAllFiles)
+            filenames.append(os.path.join(product_path,listFilesDown[0]))
+            modisOgg.dayDownload(day, listFilesDown)
+            modisOgg.closeFilelist()
+            
+    except ValueError:
+        modisOgg = downModis(url="https://e4ftl01.cr.usgs.gov", destinationFolder=product_path, 
+                             user=auth[0], password=auth[1], tiles=tiles, path=folder, 
+                             product="%s.%s" % (product,version),today=start_date,enddate=end_date)
+                # connect to http or ftp
         modisOgg.connect()
-        day = modisOgg.getListDays()[0]
-        listAllFiles = modisOgg.getFilesList(day)
-        listFilesDown = modisOgg.checkDataExist(listAllFiles)
-        filenames.append(os.path.join(product_path,listFilesDown[0]))
-        modisOgg.dayDownload(day, listFilesDown)
-        modisOgg.closeFilelist()
-        
-#    # connect to http or ftp
-#    modisOgg.connect()
-#    if modisOgg.nconnection <= 20:
-#        # download data
-#        filenames = []
-#        for i in range(numDays+1):
-#            dd = startdd+datetime.timedelta(days=i)            
-#            year = dd.year
-#            doy = (dd-datetime.datetime(year,1,1,1,1)).days
-#            rday = laidates[laidates>=doy][0]
-#            dd = datetime.datetime(year,1,1,1,1)+datetime.timedelta(days=rday-1)
-#            year = dd.year
-#            month = dd.month
-#            day = dd.day
-#            dayIn = '%d.%02d.%02d' % (year,month,day)
-#            listNewFile = modisOgg.getFilesList(dayIn)
-#            listFilesDown = modisOgg.checkDataExist(listNewFile)
-#            filenames.append(os.path.join(product_path,listFilesDown[0]))
-#            print(listFilesDown)
-#            modisOgg.dayDownload(dayIn, listFilesDown)
-##        modisOgg.downloadsAllDay()
-#    else:
-#        print("A problem with the connection occured")
+        if modisOgg.nconnection <= 20:
+            # download data
+            filenames = []
+            for i in range(numDays+1):
+                dd = startdd+datetime.timedelta(days=i)            
+                year = dd.year
+                doy = (dd-datetime.datetime(year,1,1,1,1)).days
+                rday = laidates[laidates>=doy][0]
+                dd = datetime.datetime(year,1,1,1,1)+datetime.timedelta(days=rday-1)
+                year = dd.year
+                month = dd.month
+                day = dd.day
+                dayIn = '%d.%02d.%02d' % (year,month,day)
+                listNewFile = modisOgg.getFilesList(dayIn)
+                listFilesDown = modisOgg.checkDataExist(listNewFile)
+                filenames.append(os.path.join(product_path,listFilesDown[0]))
+                print(listFilesDown)
+                modisOgg.dayDownload(dayIn, listFilesDown)
+    #        modisOgg.downloadsAllDay()
+        else:
+            print("A problem with the connection occured")
         
     return filenames
 
