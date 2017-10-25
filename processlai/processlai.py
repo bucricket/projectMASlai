@@ -18,6 +18,7 @@ import datetime
 import argparse
 import getpass
 import keyring
+import sqlite3
 from pyproj import Proj
 from .utils import folders
 from getlandsatdata import getlandsatdata
@@ -44,8 +45,71 @@ landsat_temp = os.path.join(landsat_SR,'temp')
 if not os.path.exists(landsat_temp):
     os.mkdir(landsat_temp)
 
-
-
+def updateModisDB(filenames,cacheDir):
+    
+    db_fn = os.path.join(cacheDir,"modis_db.db")
+    fn = filenames[0].split(os.sep)[-1]
+    product = fn.split('.')[0]
+    years = []
+    doys = []
+    Hs = []
+    Vs = []
+    fns = []
+    for filename in filenames:
+        fn = filename.split(os.sep)[-1]
+        fns.append(filename)
+        years.append(fn.split('.')[1][1:5])
+        doys.append(fn.split('.')[1][5:9])
+        Hs.append(fn.split('.')[2][1:3])
+        Vs.append(fn.split('.')[2][5:7])
+    if not os.path.exists(db_fn):
+        conn = sqlite3.connect( db_fn )
+        modis_dict = {"H":Hs,"V":Vs,"YEAR":years,"DOY": doys,"filename":fns}
+        modis_df = pd.DataFrame.from_dict(modis_dict)
+        modis_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
+        conn.close()
+    else:
+        conn = sqlite3.connect( db_fn )
+        orig_df = pd.read_sql_query("SELECT * from %s" % product,conn)
+        modis_dict = {"H":Hs,"V":Vs,"YEAR":years,"DOY": doys,"filename":fns}
+        modis_df = pd.DataFrame.from_dict(modis_dict)
+        orig_df = orig_df.append(modis_df,ignore_index=True)
+        orig_df = orig_df.drop_duplicates(keep='last')
+        orig_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
+        conn.close()
+ 
+def updateLandsatProductsDB(landsatDB,filenames,cacheDir,product):
+    
+    db_fn = os.path.join(cacheDir,"landsat_products.db")
+    
+    date = landsatDB.acquisitionDate
+    ullat = landsatDB.upperLeftCornerLatitude
+    ullon = landsatDB.upperLeftCornerLongitude
+    lllat = landsatDB.lowerRightCornerLatitude
+    lllon = landsatDB.lowerRightCornerLongitude
+    
+    if not os.path.exists(db_fn):
+        conn = sqlite3.connect( db_fn )
+        landsat_dict = {"acquisitionDate":date,"upperLeftCornerLatitude":ullat,
+                      "upperLeftCornerLongitude":ullon,
+                      "lowerRightCornerLatitude":lllat,
+                      "lowerRightCornerLongitude":lllon,"filename":filenames}
+        landsat_df = pd.DataFrame.from_dict(landsat_dict)
+        landsat_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
+        conn.close()
+    else:
+        conn = sqlite3.connect( db_fn )
+        orig_df = pd.read_sql_query("SELECT * from %s" % product,conn)
+        landsat_dict = {"acquisitionDate":date,"upperLeftCornerLatitude":ullat,
+                      "upperLeftCornerLongitude":ullon,
+                      "lowerRightCornerLatitude":lllat,
+                      "lowerRightCornerLongitude":lllon,"filename":filenames}
+        landsat_df = pd.DataFrame.from_dict(landsat_dict)
+        orig_df = orig_df.append(landsat_df,ignore_index=True)
+        orig_df = orig_df.drop_duplicates(keep='last')
+        orig_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
+        conn.close()
+        
 def get_modis_lai(tiles,product,version,start_date,end_date,auth):  
     startdd = datetime.datetime.strptime(start_date, '%Y-%m-%d')
     enddd = datetime.datetime.strptime(end_date, '%Y-%m-%d')
@@ -59,9 +123,9 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth):
         folder = "MOLT"
     else:
         folder = "MOTA"
-    product_path = os.path.join(modis_base,product)   
+    product_path = os.path.join(cacheDir,"MODIS",product)   
     if not os.path.exists(product_path):
-        os.mkdir(product_path)
+        os.makedirs(product_path)
         
     modisOgg = downModis(url="https://e4ftl01.cr.usgs.gov", destinationFolder=product_path, 
                          user=auth[0], password=auth[1], tiles=tiles, path=folder, 
@@ -402,6 +466,9 @@ def compute(paths,productIDs,MODIS_product,sat):
     l8bands = ["sr_band2","sr_band3","sr_band4","sr_band5","sr_band6","sr_band7","cfmask"] 
     
     count = 0
+    lai_fns = []
+    ndvi_fns = []
+    mask_fns = []
     for productID in productIDs:
         fstem = os.path.join(paths[count],productID)
         count+=1
@@ -438,16 +505,21 @@ def compute(paths,productIDs,MODIS_product,sat):
         subprocess.call(["%s" % lndbio , "%s" % fn])
         #====convert to geotiff=========
         outlaifn = os.path.join(lai_path,'%s_lai.tiff' % sceneID)
+        lai_fns.append(outlaifn)
         outndvifn = os.path.join(ndvi_path,'%s_ndvi.tiff' % sceneID)
+        ndvi_fns.append(outndvifn)
         outcfmaskfn = os.path.join(cfmask_path,'%s_Mask.tiff' % sceneID)
+        mask_fns.append(outcfmaskfn)
         subprocess.call(["gdal_translate", 'HDF4_EOS:EOS_GRID:"%s":LANDSAT:LAI' % laiFN, "%s" % outlaifn])
         subprocess.call(["gdal_translate", 'HDF4_EOS:EOS_GRID:"%s":LANDSAT:NDVI' % laiFN, "%s" % outndvifn])        
         subprocess.call(["gdal_translate", 'HDF4_EOS:EOS_GRID:"%s":LANDSAT:cfmask' % laiFN, "%s" % outcfmaskfn])
         os.remove(fn)
+
     #=====CLEANING UP========
     filelist = [ f for f in os.listdir(landsat_LAI) if f.startswith("lndsr_modlai_samples") ]
     for f in filelist:
         os.remove(os.path.join(landsat_LAI,f))    
+    return lai_fns,ndvi_fns,mask_fns
 def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):    
     # find MODIS tiles that cover landsat scene
     # MODIS products   
@@ -477,7 +549,11 @@ def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     # Compute Landsat LAI
     print("Computing Landsat LAI...")
     train(paths,productIDs,MODIS_product)
-    compute(paths,productIDs,MODIS_product,sat)    
+    lai_fns,ndvi_fns,mask_fns = compute(paths,productIDs,MODIS_product,sat)  
+    
+    updateLandsatProductsDB(search_df,lai_fns,cacheDir,'LAI')
+    updateLandsatProductsDB(search_df,ndvi_fns,cacheDir,'NDVI')
+    updateLandsatProductsDB(search_df,mask_fns,cacheDir,'CF_MASK')
 
 def main():
     # Get time and location from user
