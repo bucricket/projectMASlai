@@ -45,39 +45,95 @@ landsat_temp = os.path.join(landsat_SR,'temp')
 if not os.path.exists(landsat_temp):
     os.mkdir(landsat_temp)
 
-def updateModisDB(filenames,CacheDir):
+def updateModisDB(filenames,cacheDir):
     
     db_fn = os.path.join(cacheDir,"modis_db.db")
     fn = filenames[0].split(os.sep)[-1]
     product = fn.split('.')[0]
     years = []
     doys = []
-    Hs = []
-    Vs = []
+    tiles = []
     fns = []
     for filename in filenames:
         fn = filename.split(os.sep)[-1]
         fns.append(filename)
         years.append(fn.split('.')[1][1:5])
         doys.append(fn.split('.')[1][5:9])
-        Hs.append(fn.split('.')[2][1:3])
-        Vs.append(fn.split('.')[2][5:7])
+        tiles.append(fn.split('.')[2])
     if not os.path.exists(db_fn):
         conn = sqlite3.connect( db_fn )
-        modis_dict = {"H":Hs,"V":Vs,"YEAR":years,"DOY": doys,"filename":fns}
+        modis_dict = {"TILE":tiles,"YEAR":years,"DOY": doys,"filename":fns}
         modis_df = pd.DataFrame.from_dict(modis_dict)
         modis_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
         conn.close()
     else:
         conn = sqlite3.connect( db_fn )
         orig_df = pd.read_sql_query("SELECT * from %s" % product,conn)
-        modis_dict = {"H":Hs,"V":Vs,"YEAR":years,"DOY": doys,"filename":fns}
+        modis_dict = {"TILE":tiles,"YEAR":years,"DOY": doys,"filename":fns}
         modis_df = pd.DataFrame.from_dict(modis_dict)
         orig_df = orig_df.append(modis_df,ignore_index=True)
         orig_df = orig_df.drop_duplicates(keep='last')
         orig_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
         conn.close()
- 
+
+def searchModisDB(tiles,start_date,end_date,product):
+    db_fn = os.path.join(cacheDir,"modis_db.db")
+    conn = sqlite3.connect( db_fn )
+    startdd = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+    enddd = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+    numDays= (enddd-startdd).days
+    years = range(startdd.year,enddd.year+1)
+    laidates = np.array(range(1,366,4))
+    df1 = pd.DataFrame.from_dict({"TILE":[],"YEAR":[],"DOY": [],"filename":[]})
+    df2 = pd.DataFrame.from_dict({"TILE":[],"YEAR":[],"DOY": []})
+    count = 0
+    for tile in tiles:
+        for i in range(numDays+1):
+            dd = startdd+datetime.timedelta(days=i)            
+            year = dd.year
+            doy = (dd-datetime.datetime(year,1,1,0,0)).days+1
+            rday = laidates[laidates>=doy][0]
+            if (doy==rday):
+                dd = datetime.datetime(year,1,1,0,0)+datetime.timedelta(days=rday-1)
+                year = dd.year
+                df = pd.read_sql_query("SELECT * from %s WHERE (TILE = '%s')"
+                               "AND (YEAR =  '%d') AND (DOY = '%03d' )" % 
+                               (product,tile,year,rday),conn)
+                df1 = df1.append(df,ignore_index=True)
+                df1 = df1[["DOY","TILE","YEAR"]]
+                row = pd.Series({"TILE":str(tile),"YEAR":str(year),"DOY": str(rday)})
+                df2 = df2.append(row,ignore_index=True)
+    merged = df2.merge(df1, indicator=True, how='outer')
+    df3 = merged[merged['_merge'] != 'both' ]
+    out_df = df3[["DOY","TILE","YEAR"]]
+    conn.close()
+    return out_df
+                        
+                        
+    for i in range(numDays+1):
+        dd = startdd+datetime.timedelta(days=i)            
+        year = dd.year
+        doy = (dd-datetime.datetime(year,1,1,1,1)).days
+        rday = laidates[laidates>=doy][0]
+        for tile in tiles:
+
+    
+    
+    modis_dict = {"H":Hs,"V":Vs,"YEAR":years,"DOY": doys,"filename":fns}
+    merged = df1.merge(df2, indicator=True, how='outer')
+    
+        for d in dates:
+        year = int(d[0:4])
+        doy = int(d[4:7])
+        fdate = date.fromordinal(date(year, 1, 1).toordinal() + doy - 1).isoformat()
+        modisOgg = downmodis.downModis(url=options.url, user=user,
+                                       password=password,
+                                       destinationFolder=args[0],
+                                       tiles=tiles, path=options.path,
+                                       product=options.prod, delta=1,
+                                       today=fdate, debug=options.debug,
+                                       jpg=options.jpg)
+    
 def updateLandsatProductsDB(landsatDB,filenames,cacheDir,product):
     
     db_fn = os.path.join(cacheDir,"landsat_products.db")
@@ -118,7 +174,7 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
     startdd = datetime.datetime.strptime(start_date, '%Y-%m-%d')
     enddd = datetime.datetime.strptime(end_date, '%Y-%m-%d')
     numDays= (enddd-startdd).days
-    
+
     laidates = np.array(range(1,366,4))
 
     if product.startswith('MCD'):
@@ -130,32 +186,54 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
     product_path = os.path.join(cacheDir,product)   
     if not os.path.exists(product_path):
         os.makedirs(product_path)
+    out_df = searchModisDB(tiles,start_date,end_date,product)   
+#    modisOgg = downModis(url="https://e4ftl01.cr.usgs.gov", destinationFolder=product_path, 
+#                         user=auth[0], password=auth[1], tiles=tiles, path=folder, 
+#                         product="%s.%s" % (product,version),today=start_date,enddate=end_date)
+    filenames = []
+    for i in range(len(out_df))
+        year = int(out_df.YEAR[i])
+        doy = int(out_df.DOY[i])
+        fdate = date.fromordinal(date(year, 1, 1).toordinal() + doy - 1).isoformat()
+        modisOgg = downmodis.downModis(url="https://e4ftl01.cr.usgs.gov", user=auth[0],
+                                       password=auth[1],
+                                       destinationFolder=product_path,
+                                       tiles=tiles, path=folder,
+                                       product="%s.%s" % (product,version), delta=1,
+                                       today=fdate)
+        modisOgg.connect()
+        day = modisOgg.getListDays()[0]
+        listAllFiles = modisOgg.getFilesList(day)
+        listFilesDown = modisOgg.checkDataExist(listAllFiles)
+        filenames.append(os.path.join(product_path,listFilesDown[0]))
+        modisOgg.dayDownload(day, listFilesDown)
+        modisOgg.closeFilelist()
         
-    modisOgg = downModis(url="https://e4ftl01.cr.usgs.gov", destinationFolder=product_path, 
-                         user=auth[0], password=auth[1], tiles=tiles, path=folder, 
-                         product="%s.%s" % (product,version),today=start_date,enddate=end_date)
-
-    # connect to http or ftp
-    modisOgg.connect()
-    if modisOgg.nconnection <= 20:
-        # download data
-        for i in range(numDays+1):
-            dd = startdd+datetime.timedelta(days=i)            
-            year = dd.year
-            doy = (dd-datetime.datetime(year,1,1,1,1)).days
-            rday = laidates[laidates>=doy][0]
-            dd = datetime.datetime(year,1,1,1,1)+datetime.timedelta(days=rday-1)
-            year = dd.year
-            month = dd.month
-            day = dd.day
-            dayIn = '%d.%02d.%02d' % (year,month,day)
-            listNewFile = modisOgg.getFilesList(dayIn)
-            listFilesDown = modisOgg.checkDataExist(listNewFile)
-            print(listFilesDown)
-            modisOgg.dayDownload(dayIn, listFilesDown)
-#        modisOgg.downloadsAllDay()
-    else:
-        print("A problem with the connection occured")
+#    # connect to http or ftp
+#    modisOgg.connect()
+#    if modisOgg.nconnection <= 20:
+#        # download data
+#        filenames = []
+#        for i in range(numDays+1):
+#            dd = startdd+datetime.timedelta(days=i)            
+#            year = dd.year
+#            doy = (dd-datetime.datetime(year,1,1,1,1)).days
+#            rday = laidates[laidates>=doy][0]
+#            dd = datetime.datetime(year,1,1,1,1)+datetime.timedelta(days=rday-1)
+#            year = dd.year
+#            month = dd.month
+#            day = dd.day
+#            dayIn = '%d.%02d.%02d' % (year,month,day)
+#            listNewFile = modisOgg.getFilesList(dayIn)
+#            listFilesDown = modisOgg.checkDataExist(listNewFile)
+#            filenames.append(os.path.join(product_path,listFilesDown[0]))
+#            print(listFilesDown)
+#            modisOgg.dayDownload(dayIn, listFilesDown)
+##        modisOgg.downloadsAllDay()
+#    else:
+#        print("A problem with the connection occured")
+        
+    return filenames
 
                      
 def latlon_2modis_tile(lat,lon):
@@ -542,8 +620,9 @@ def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     print(productIDs)
     # download MODIS LAI over the same area and time
     print("Downloading MODIS data...")
-    get_modis_lai(tiles,MODIS_product,version,start_date,end_date,("%s"% earth_user,"%s"% earth_pass),modisCacheDir)
+    mode_files = get_modis_lai(tiles,MODIS_product,version,start_date,end_date,("%s"% earth_user,"%s"% earth_pass),modisCacheDir)
     print(paths)
+    updateModisDB(mode_files,modisCacheDir)
     # Convert Landsat SR downloads to ENVI format
     # Note:  May be some warnings about unknown field - ignore.
     print("Converting Landsat SR to ENVI format...")
