@@ -448,8 +448,7 @@ def compute(paths,productIDs,MODIS_product,sat):
     filelist = [ f for f in os.listdir(landsat_LAI) if f.startswith("lndsr_modlai_samples") ]
     for f in filelist:
         os.remove(os.path.join(landsat_LAI,f))    
-def get_LAI(loc,start_date,end_date,usgs_user,usgs_pass,earth_user,
-            earth_pass,cloud,sat,cacheDir):    
+def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):    
     # find MODIS tiles that cover landsat scene
     # MODIS products   
     MODIS_product = 'MCD15A3H'
@@ -460,7 +459,8 @@ def get_LAI(loc,start_date,end_date,usgs_user,usgs_pass,earth_user,
     available = 'Y'
     search_df = getlandsatdata.search(loc[0],loc[1],start_date,end_date,cloud,available,cacheDir,sat)
     productIDs = search_df.LANDSAT_PRODUCT_ID
-    paths = search_df.local_file    
+    paths = search_df.local_file   
+    print(productIDs)
     # download MODIS LAI over the same area and time
     print("Downloading MODIS data...")
 #    get_modis_lai(tiles,MODIS_product,version,start_date,end_date,("%s"% earth_user,"%s"% earth_pass))
@@ -498,12 +498,12 @@ def main():
     
     # =====USGS credentials===============
      # need to get this from pop up
-    usgs_user = str(getpass.getpass(prompt="usgs username:"))
-    if keyring.get_password("usgs",usgs_user)==None:
-        usgs_pass = str(getpass.getpass(prompt="usgs password:"))
-        keyring.set_password("usgs",usgs_user,usgs_pass)
-    else:
-        usgs_pass = str(keyring.get_password("usgs",usgs_user)) 
+#    usgs_user = str(getpass.getpass(prompt="usgs username:"))
+#    if keyring.get_password("usgs",usgs_user)==None:
+#        usgs_pass = str(getpass.getpass(prompt="usgs password:"))
+#        keyring.set_password("usgs",usgs_user,usgs_pass)
+#    else:
+#        usgs_pass = str(keyring.get_password("usgs",usgs_user)) 
     
     
      # =====earthData credentials===============
@@ -514,8 +514,7 @@ def main():
     else:
         earth_pass = str(keyring.get_password("nasa",earth_user)) 
     
-    get_LAI(loc,start_date,end_date,usgs_user,usgs_pass,earth_user,
-            earth_pass,cloud,sat,cacheDir)
+    get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir)
 
     print("All done with LAI")
 
