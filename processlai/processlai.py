@@ -214,8 +214,8 @@ def sample(paths,productIDs,MODIS_product):
         # find the 4 day MODIS doy prior to the Landsat doy
         mdoy = int((int((float(ldoy)-1.)/4.)*4.)+1)
         
-        modFiles = glob.glob(os.path.join(modis_base,"%s","%s.A%s%s.*.hdf" % (MODIS_product,MODIS_product,year,mdoy)))
-        sam_file = os.path.join(landsat_LAI,"SR_LAI.%s.%s.%s_A%s%s.txt" %(date,sceneID,MODIS_product,year,mdoy))
+        modFiles = glob.glob(os.path.join(modis_base,"%s" % MODIS_product,"%s.A%d%03d.*.hdf" % (MODIS_product,year,mdoy)))
+        sam_file = os.path.join(landsat_LAI,"SR_LAI.%s.%s.%s_A%d%03d.txt" %(date,sceneID,MODIS_product,year,mdoy))
         #====convert the qa to cfmask=====
         datFile_qa = fstem+"_%s.%s.dat" % ("pixel_qa",bands[6])
         datFile_cfmask = fstem+"_%s.%s.dat" % (l8bands[6],bands[6])
@@ -298,7 +298,7 @@ def train(paths,productIDs,MODIS_product):
         date = meta.DATE_ACQUIRED
         # find the 4 day MODIS doy prior to the Landsat doy
         mdoy = int((int((float(ldoy)-1.)/4.)*4.)+1)
-        sam_file = os.path.join(landsat_LAI,"SR_LAI.%s.%s.%s_A%s%s.txt" %(date,sceneID,MODIS_product,year,mdoy))
+        sam_file = os.path.join(landsat_LAI,"SR_LAI.%s.%s.%s_A%d%03d.txt" %(date,sceneID,MODIS_product,year,mdoy))
     
         df = df.append(pd.read_csv(sam_file,delim_whitespace=True,names=['ulx','uly','blue',
         'green','red','nir','swir1','swir2','ndvi','ndwi','lai','weight','satFlag']),ignore_index=True)
