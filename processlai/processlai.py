@@ -477,7 +477,7 @@ def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     # Compute Landsat LAI
     print("Computing Landsat LAI...")
     train(paths,productIDs,MODIS_product)
-    compute(paths,productIDs,MODIS_product)    
+    compute(paths,productIDs,MODIS_product,sat)    
 
 def main():
     # Get time and location from user
