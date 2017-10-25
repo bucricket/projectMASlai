@@ -108,31 +108,7 @@ def searchModisDB(tiles,start_date,end_date,product):
     out_df = df3[["DOY","TILE","YEAR"]]
     conn.close()
     return out_df
-                        
-                        
-    for i in range(numDays+1):
-        dd = startdd+datetime.timedelta(days=i)            
-        year = dd.year
-        doy = (dd-datetime.datetime(year,1,1,1,1)).days
-        rday = laidates[laidates>=doy][0]
-        for tile in tiles:
 
-    
-    
-    modis_dict = {"H":Hs,"V":Vs,"YEAR":years,"DOY": doys,"filename":fns}
-    merged = df1.merge(df2, indicator=True, how='outer')
-    
-        for d in dates:
-        year = int(d[0:4])
-        doy = int(d[4:7])
-        fdate = date.fromordinal(date(year, 1, 1).toordinal() + doy - 1).isoformat()
-        modisOgg = downmodis.downModis(url=options.url, user=user,
-                                       password=password,
-                                       destinationFolder=args[0],
-                                       tiles=tiles, path=options.path,
-                                       product=options.prod, delta=1,
-                                       today=fdate, debug=options.debug,
-                                       jpg=options.jpg)
     
 def updateLandsatProductsDB(landsatDB,filenames,cacheDir,product):
     
@@ -191,11 +167,11 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
 #                         user=auth[0], password=auth[1], tiles=tiles, path=folder, 
 #                         product="%s.%s" % (product,version),today=start_date,enddate=end_date)
     filenames = []
-    for i in range(len(out_df))
+    for i in range(len(out_df)):
         year = int(out_df.YEAR[i])
         doy = int(out_df.DOY[i])
-        fdate = date.fromordinal(date(year, 1, 1).toordinal() + doy - 1).isoformat()
-        modisOgg = downmodis.downModis(url="https://e4ftl01.cr.usgs.gov", user=auth[0],
+        fdate = datetime.date.fromordinal(datetime.date(year, 1, 1).toordinal() + doy - 1).isoformat()
+        modisOgg = downModis(url="https://e4ftl01.cr.usgs.gov", user=auth[0],
                                        password=auth[1],
                                        destinationFolder=product_path,
                                        tiles=tiles, path=folder,
