@@ -587,7 +587,7 @@ def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     MODIS_product = 'MCD15A3H'
     version = '006'
     [v,h] = latlon_2modis_tile(loc[0],loc[1])
-    tiles = "h%02dv%02d" %(h,v)
+    tiles = ["h%02dv%02d" %(h,v)]
     #====search for available data=============================================
     available = 'Y'
     search_df = getlandsatdata.search(loc[0],loc[1],start_date,end_date,cloud,available,landsatCacheDir,sat)
