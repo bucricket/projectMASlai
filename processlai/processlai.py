@@ -180,7 +180,7 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
             day = modisOgg.getListDays()[0]
             listAllFiles = modisOgg.getFilesList(day)
             listFilesDown = modisOgg.checkDataExist(listAllFiles)
-            filenames.append(os.path.join(product_path,listFilesDown))
+            filenames.append(os.path.join(product_path,listFilesDown[0]))
             modisOgg.dayDownload(day, listFilesDown)
             modisOgg.closeFilelist()
             
@@ -209,7 +209,7 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
                 print(listFilesDown)
                 if (len(listFilesDown) < 1):
                     continue
-                filenames.append(os.path.join(product_path,listFilesDown))
+                filenames.append(os.path.join(product_path,listFilesDown[0]))
                 modisOgg.dayDownload(dayIn, listFilesDown)
     #        modisOgg.downloadsAllDay()
         else:
@@ -230,25 +230,7 @@ def latlon_2modis_tile(lat,lon):
     H = (x-ulx)/tileWidth
     V = 18-((y-uly)/tileWidth)
     return int(V),int(H)
-    
-#def geotiff_2envi():   
-#    #geotiffConvert = 'GeoTiff2ENVI'
-#    bands = ["blue","green","red","nir","swir1","swir2","cloud"]
-#    l8bands = ["sr_band2","sr_band3","sr_band4","sr_band5","sr_band6","sr_band7","pixel_qa"] 
-#    
-#    landsat_files = glob.glob(os.path.join(landsat_temp,"*_MTL.txt"))
-#    for i in range(len(landsat_files)):
-#        
-#        fn = landsat_files[i][:-8]
-#        meta = landsat_metadata(landsat_files[i])
-#        fstem = os.path.join(os.sep.join((fn.split(os.sep)[:-1])),meta.LANDSAT_SCENE_ID)
-#
-#        for i in range(len(bands)):
-#            tifFile = fn+"_%s.tif" % l8bands[i]
-#            datFile = fstem+"_%s.%s.dat" % (l8bands[i],bands[i])
-#            #subprocess.call(["%s" % geotiffConvert ,"%s" % tifFile, "%s" % datFile])
-#            subprocess.call(["gdal_translate","-q", "-of", "ENVI","%s" % tifFile, "%s" % datFile ])
-#            os.rename("%s.hdr" % datFile[:-4],"%s.dat.hdr" % datFile[:-4])
+
             
 def geotiff_2envi(paths,productIDs):   
     #geotiffConvert = 'GeoTiff2ENVI'
@@ -265,63 +247,6 @@ def geotiff_2envi(paths,productIDs):
             subprocess.call(["gdal_translate","-q", "-of", "ENVI","%s" % tifFile, "%s" % datFile ])
             os.rename("%s.hdr" % datFile[:-4],"%s.dat.hdr" % datFile[:-4])
 
-#def sample():    
-#    sample = 'lndlai_sample'
-#    convert = 'lndqa2fmask'
-#    bands = ["blue","green","red","nir","swir1","swir2","cloud"]
-#    l8bands = ["sr_band2","sr_band3","sr_band4","sr_band5","sr_band6","sr_band7","cfmask"] 
-#    
-#    landsat_files = glob.glob(os.path.join(landsat_temp,"*_MTL.txt"))
-#    
-#    for i in range(len(landsat_files)):
-#        #sceneID = landsat_files[i].split(os.sep)[-1][:-4]
-#        meta = landsat_metadata(landsat_files[i])
-#        sceneID = meta.LANDSAT_SCENE_ID
-#        
-#        # extract the Landsat doy and year
-#        d = meta.DATETIME_OBJ
-#        year = d.year
-#        ldoy = sceneID[13:16]
-##        year = int(sceneID[9:13])
-#        # convert to date    
-##        dd = datetime.datetime(year, 1, 1) + datetime.timedelta(int(ldoy) - 1)
-##        date = '%d-%02d-%02d' % (dd.year,dd.month,dd.day)
-#        date = meta.DATE_ACQUIRED
-#        # find the 4 day MODIS doy prior to the Landsat doy
-#        mdoy = int((int((float(ldoy)-1.)/4.)*4.)+1)
-#        
-#        modFiles = glob.glob(os.path.join(modis_base,"MCD15A3H","MCD15A3H.A%s%s.*.hdf" % (year,mdoy)))
-#
-#        #fstem = landsat_files[i][:-4]
-#        fn = landsat_files[i][:-8]
-#        fstem = os.path.join(os.sep.join((fn.split(os.sep)[:-1])),meta.LANDSAT_SCENE_ID)
-#        lai_path = landsat_LAI
-#        if not os.path.exists(lai_path):
-#            os.mkdir(lai_path)
-#        sam_file = os.path.join(lai_path,"SR_LAI.%s.%s.MCD15A3H_A%s%s.txt" %(date,sceneID,year,mdoy))
-#        #====convert the qa to cfmask=====
-#        datFile_qa = fstem+"_%s.%s.dat" % ("pixel_qa",bands[6])
-#        datFile_cfmask = fstem+"_%s.%s.dat" % (l8bands[6],bands[6])
-#        subprocess.call(["%s" % convert, "-lndsr", "%s" % datFile_qa, "-cmask", "%s" % datFile_cfmask])
-#        
-#        for i in range(len(modFiles)):  
-#            fn = os.path.join(lai_path,"slai%d.inp" % i)
-#            file = open(fn, "w")
-#            file.write("LANDSAT_BASE_BLUE = %s_%s.%s.dat\n" % (fstem,l8bands[0],bands[0]))
-#            file.write("LANDSAT_BASE_GREEN = %s_%s.%s.dat\n" % (fstem,l8bands[1],bands[1]))
-#            file.write("LANDSAT_BASE_RED = %s_%s.%s.dat\n" % (fstem,l8bands[2],bands[2]))
-#            file.write("LANDSAT_BASE_NIR = %s_%s.%s.dat\n" % (fstem,l8bands[3],bands[3]))
-#            file.write("LANDSAT_BASE_SWIR1 = %s_%s.%s.dat\n" % (fstem,l8bands[4],bands[4]))
-#            file.write("LANDSAT_BASE_SWIR2 = %s_%s.%s.dat\n" % (fstem,l8bands[5],bands[5]))
-#            file.write("LANDSAT_BASE_CLOUD = %s_%s.%s.dat\n" % (fstem,l8bands[6],bands[6]))
-#            file.write("MODIS_BASE_FILE = %s\n" % modFiles[i])
-#            file.write("SAMPLE_FILE_OUT = %s\n" % sam_file)
-#            file.write("PURE_SAMPLE_TH = 0.2\n")
-#            file.close()
-#        
-#            subprocess.call(["%s" % sample , "%s" % fn])
-#            #os.remove(os.path.join(lai_path,"slai%d.inp" % i))
-            
 def sample(paths,productIDs,MODIS_product):    
     sample = 'lndlai_sample'
     convert = 'lndqa2fmask'
@@ -367,48 +292,6 @@ def sample(paths,productIDs,MODIS_product):
         
             subprocess.call(["%s" % sample , "%s" % fn])
 
-#def train():    
-#    cubist = 'cubist'
-#    landsat_files = glob.glob(os.path.join(landsat_LAI,"*.txt"))
-#    #======combine input data======================================
-#    df = pd.DataFrame(columns=['ulx','uly','blue',
-#        'green','red','nir','swir1','swir2','ndvi','ndwi','lai','weight','satFlag'])
-#    for i in range(len(landsat_files)):
-#        sam_file = landsat_files[i]
-#    
-#        df = df.append(pd.read_csv(sam_file,delim_whitespace=True,names=['ulx','uly','blue',
-#        'green','red','nir','swir1','swir2','ndvi','ndwi','lai','weight','satFlag']),ignore_index=True)
-#    
-#    #=====create filestem.data====================================
-#    df = df[(df.satFlag=='N')]
-#    df = df.sort_values(by='weight')
-#    start_date='200'
-#    end_date = '300'
-#    filestem = os.path.join(landsat_LAI,"lndsr_modlai_samples.combined_%s-%s" %(start_date,end_date))
-#    df.to_csv(os.path.join(landsat_LAI,filestem+".data"), columns = ['blue','green','red',
-#    'nir','swir1','swir2','ndvi','ndwi','lai','weight'],header=None, 
-#    index=None, mode='w',  sep="\t", encoding='utf-8')
-#    
-#    #====create filestem.names====================================
-#    fn = os.path.join(landsat_LAI,"%s.names" % filestem)
-#    file = open(fn, "w")
-#    file.write("lai.\n")
-#    file.write("B1: continuous\n")
-#    file.write("B2: continuous\n")
-#    file.write("B3: continuous\n")
-#    file.write("B4: continuous\n")
-#    file.write("B5: continuous\n")
-#    file.write("B7: continuous\n")
-#    file.write("ndvi: continuous\n")
-#    file.write("ndwi: continuous\n")
-#    file.write("lai: continuous\n")
-#    file.write("case weight: continuous\n")
-#    file.write("attributes excluded: B1, B2, B7, ndvi, ndwi\n")
-#    file.close()
-#    
-#    nrules = 5
-#    subprocess.call(["%s" % cubist , "-f" ,"%s" % filestem, "-r", "%d" % nrules, "-u"])
-            
 def train(paths,productIDs,MODIS_product):    
     cubist = 'cubist'
     #======combine input data======================================
@@ -461,69 +344,6 @@ def train(paths,productIDs,MODIS_product):
     
     nrules = 5
     subprocess.call(["%s" % cubist , "-f" ,"%s" % filestem, "-r", "%d" % nrules, "-u"])
-            
-#def compute():    
-#    lndbio ='lndlai_compute'
-#    bands = ["blue","green","red","nir","swir1","swir2","cloud"]
-#    l8bands = ["sr_band2","sr_band3","sr_band4","sr_band5","sr_band6","sr_band7","cfmask"] 
-#    
-#    landsat_files = glob.glob(os.path.join(landsat_temp,"*_MTL.txt"))
-#    for i in range(len(landsat_files)):
-##        sceneID = landsat_files[i].split(os.sep)[-1][:-4]  
-#        meta = landsat_metadata(landsat_files[i])
-#        sceneID = meta.LANDSAT_SCENE_ID
-#        #fstem = landsat_files[i][:-4]       
-#        fn = landsat_files[i][:-8]
-#        fstem = os.path.join(os.sep.join((fn.split(os.sep)[:-1])),meta.LANDSAT_SCENE_ID)
-#        # create a folder for lai if it does not exist
-#        #lai_path = os.path.join(landsat_LAI,'%s' % sceneID[9:16])
-#        lai_path = os.path.join(landsat_LAI,'%s' % sceneID[3:9])
-#        if not os.path.exists(lai_path):
-#            os.mkdir(lai_path)
-#        ndvi_path = os.path.join(landsat_NDVI,'%s' % sceneID[3:9])
-#        if not os.path.exists(ndvi_path):
-#            os.mkdir(ndvi_path)
-#        cfmask_path = os.path.join(landsat_Mask,'%s' % sceneID[3:9])
-#        if not os.path.exists(cfmask_path):
-#            os.mkdir(cfmask_path)
-#        start_date='200'
-#        end_date = '300'
-#        filestem = os.path.join(landsat_LAI,"lndsr_modlai_samples.combined_%s-%s" %(start_date,end_date))
-#        laiFN = os.path.join(landsat_LAI,"lndlai.%s.hdf" % sceneID)
-#        fn = os.path.join(landsat_LAI,"compute_lai.inp")
-#        file = open(fn, "w")
-#        file.write("LANDSAT_BASE_BLUE = %s_%s.%s.dat\n" % (fstem,l8bands[0],bands[0]))
-#        file.write("LANDSAT_BASE_GREEN = %s_%s.%s.dat\n" % (fstem,l8bands[1],bands[1]))
-#        file.write("LANDSAT_BASE_RED = %s_%s.%s.dat\n" % (fstem,l8bands[2],bands[2]))
-#        file.write("LANDSAT_BASE_NIR = %s_%s.%s.dat\n" % (fstem,l8bands[3],bands[3]))
-#        file.write("LANDSAT_BASE_SWIR1 = %s_%s.%s.dat\n" % (fstem,l8bands[4],bands[4]))
-#        file.write("LANDSAT_BASE_SWIR2 = %s_%s.%s.dat\n" % (fstem,l8bands[5],bands[5]))
-#        file.write("LANDSAT_BASE_CLOUD = %s_%s.%s.dat\n" % (fstem,l8bands[6],bands[6]))
-#        file.write("LANDSAT_ANC_FILE = %s\n" % filestem)
-#        file.write("BIOPHYSICS_PARA_FILE_OUT = %s\n" % laiFN)
-#        file.close()
-#        
-#        subprocess.call(["%s" % lndbio , "%s" % fn])
-#        #====convert to geotiff=========
-#        outlaifn = os.path.join(lai_path,'%s_lai.tiff' % sceneID)
-#        outndvifn = os.path.join(ndvi_path,'%s_ndvi.tiff' % sceneID)
-#        outcfmaskfn = os.path.join(cfmask_path,'%s_Mask.tiff' % sceneID)
-##        tempfn = os.path.join(lai_path,'temp.tiff')
-#        subprocess.call(["gdal_translate", 'HDF4_EOS:EOS_GRID:"%s":LANDSAT:LAI' % laiFN, "%s" % outlaifn])
-##        subprocess.call(["gdal_calc.py", "-A %s" % tempfn,  "--outfile=%s" % outlaifn,
-##                                 "--type=UInt16", "--overwrite", '--calc="A"'])
-#        subprocess.call(["gdal_translate", 'HDF4_EOS:EOS_GRID:"%s":LANDSAT:NDVI' % laiFN, "%s" % outndvifn])
-#        
-#        subprocess.call(["gdal_translate", 'HDF4_EOS:EOS_GRID:"%s":LANDSAT:cfmask' % laiFN, "%s" % outcfmaskfn])
-##        subprocess.call(["gdal_calc.py", "-A %s" % tempfn,  "--outfile=%s" % outndvifn, 
-##                         "--type=UInt16", "--overwrite", '--calc="A"'])
-##        shutil.move(laiFN,os.path.join(lai_path,"lndlai.%s.hdf" % sceneID))
-#        os.remove(fn)
-##        os.remove(tempfn)
-#    #=====CLEANING UP========
-#    filelist = [ f for f in os.listdir(landsat_LAI) if f.startswith("lndsr_modlai_samples") ]
-#    for f in filelist:
-#        os.remove(os.path.join(landsat_LAI,f))
 
 def compute(paths,productIDs,MODIS_product,sat,cacheDir):    
     lndbio ='lndlai_compute'
@@ -602,9 +422,9 @@ def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     print(productIDs)
     # download MODIS LAI over the same area and time
     print("Downloading MODIS data...")
-    mode_files = get_modis_lai(tiles,MODIS_product,version,start_date,end_date,("%s"% earth_user,"%s"% earth_pass),modisCacheDir)
+    modis_files = get_modis_lai(tiles,MODIS_product,version,start_date,end_date,("%s"% earth_user,"%s"% earth_pass),modisCacheDir)
     print(paths)
-    updateModisDB(mode_files,modisCacheDir)
+    updateModisDB(modis_files,modisCacheDir)
     # Convert Landsat SR downloads to ENVI format
     # Note:  May be some warnings about unknown field - ignore.
     print("Converting Landsat SR to ENVI format...")
