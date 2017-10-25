@@ -76,7 +76,7 @@ def updateModisDB(filenames,cacheDir):
         orig_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
         conn.close()
 
-def searchModisDB(tiles,start_date,end_date,product):
+def searchModisDB(tiles,start_date,end_date,product,cacheDir):
     db_fn = os.path.join(cacheDir,"modis_db.db")
     conn = sqlite3.connect( db_fn )
     startdd = datetime.datetime.strptime(start_date, '%Y-%m-%d')
@@ -133,7 +133,7 @@ def updateLandsatProductsDB(landsatDB,filenames,cacheDir,product):
         conn = sqlite3.connect( db_fn )
         try:            
             orig_df = pd.read_sql_query("SELECT * from %s" % product,conn)
-        except ValueError:
+        except:
             orig_df = pd.DataFrame()
             
         landsat_dict = {"acquisitionDate":date,"upperLeftCornerLatitude":ullat,
@@ -163,7 +163,7 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
     if not os.path.exists(product_path):
         os.makedirs(product_path)
     try:
-        out_df = searchModisDB(tiles,start_date,end_date,product) 
+        out_df = searchModisDB(tiles,start_date,end_date,product,cacheDir) 
         pass
         filenames = []
         for i in range(len(out_df)):
