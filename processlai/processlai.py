@@ -127,7 +127,7 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
         folder = "MOLT"
     else:
         folder = "MOTA"
-    product_path = os.path.join(cacheDir,"MODIS",product)   
+    product_path = os.path.join(cacheDir,product)   
     if not os.path.exists(product_path):
         os.makedirs(product_path)
         
@@ -151,6 +151,7 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
             dayIn = '%d.%02d.%02d' % (year,month,day)
             listNewFile = modisOgg.getFilesList(dayIn)
             listFilesDown = modisOgg.checkDataExist(listNewFile)
+            print(listFilesDown)
             modisOgg.dayDownload(dayIn, listFilesDown)
 #        modisOgg.downloadsAllDay()
     else:
