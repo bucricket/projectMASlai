@@ -207,6 +207,8 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
                 listNewFile = modisOgg.getFilesList(dayIn)
                 listFilesDown = modisOgg.checkDataExist(listNewFile)
                 print(listFilesDown)
+                if (len(listFilesDown) < 1):
+                    continue
                 filenames.append(os.path.join(product_path,listFilesDown))
                 modisOgg.dayDownload(dayIn, listFilesDown)
     #        modisOgg.downloadsAllDay()
