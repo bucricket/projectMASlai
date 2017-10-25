@@ -459,7 +459,7 @@ def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     available = 'Y'
     search_df = getlandsatdata.search(loc[0],loc[1],start_date,end_date,cloud,available,cacheDir,sat)
     productIDs = search_df.LANDSAT_PRODUCT_ID
-    paths = search_df.local_file   
+    paths = search_df.local_file_path   
     print(productIDs)
     # download MODIS LAI over the same area and time
     print("Downloading MODIS data...")
