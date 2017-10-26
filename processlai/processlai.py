@@ -198,7 +198,10 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
             day = modisOgg.getListDays()[0]
             listAllFiles = modisOgg.getFilesList(day)
             listFilesDown = modisOgg.checkDataExist(listAllFiles)
-            filenames.append(os.path.join(product_path,listFilesDown))
+            if (len(listFilesDown) < 1):
+                continue
+            file2download = filter(lambda x: x.endswith('.hdf'),listFilesDown)
+            filenames.append(os.path.join(product_path,file2download[0]))
             modisOgg.dayDownload(day, listFilesDown)
             modisOgg.closeFilelist()
             
@@ -217,18 +220,20 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
                 year = dd.year
                 doy = (dd-datetime.datetime(year,1,1,1,1)).days
                 rday = laidates[laidates>=doy][0]
-                dd = datetime.datetime(year,1,1,1,1)+datetime.timedelta(days=rday-1)
-                year = dd.year
-                month = dd.month
-                day = dd.day
-                dayIn = '%d.%02d.%02d' % (year,month,day)
-                listNewFile = modisOgg.getFilesList(dayIn)
-                listFilesDown = modisOgg.checkDataExist(listNewFile)
-                print(listFilesDown)
-                if (len(listFilesDown) < 1):
-                    continue
-                filenames.append(os.path.join(product_path,listFilesDown[0]))
-                modisOgg.dayDownload(dayIn, listFilesDown)
+                if (rday==doy):
+                    dd = datetime.datetime(year,1,1,1,1)+datetime.timedelta(days=rday-1)
+                    year = dd.year
+                    month = dd.month
+                    day = dd.day
+                    dayIn = '%d.%02d.%02d' % (year,month,day)
+                    listNewFile = modisOgg.getFilesList(dayIn)
+                    listFilesDown = modisOgg.checkDataExist(listNewFile)
+                    if (len(listFilesDown) < 1):
+                        continue
+                    file2download = filter(lambda x: x.endswith('.hdf'),listFilesDown)
+                    filenames.append(os.path.join(product_path,file2download[0]))
+#                    filenames.append(os.path.join(product_path,listFilesDown[0]))
+                    modisOgg.dayDownload(dayIn, listFilesDown)
     #        modisOgg.downloadsAllDay()
         else:
             print("A problem with the connection occured")
