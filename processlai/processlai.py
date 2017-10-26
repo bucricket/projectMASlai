@@ -453,7 +453,7 @@ def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     if os.path.exists(db_fn):
         processedProductIDs = searchLandsatProductsDB(loc[0],loc[1],start_date,end_date,"LAI",landsatCacheDir)
         df1 = processedProductIDs[["LANDSAT_PRODUCT_ID"]]
-        merged = df1.merge(productIDs, indicator=True, how='outer')
+        merged = df1.merge(pd.DataFrame(productIDs), indicator=True, how='outer')
         df3 = merged[merged['_merge'] != 'both' ]
         productIDs = df3[["LANDSAT_PRODUCT_ID"]]
     # Convert Landsat SR downloads to ENVI format
