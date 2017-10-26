@@ -430,6 +430,7 @@ def compute(paths,productIDs,MODIS_product,sat,cacheDir):
 def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir): 
     landsatCacheDir = os.path.join(cacheDir,"LANDSAT")
     modisCacheDir = os.path.join(cacheDir,"MODIS")
+    db_fn = os.path.join(landsatCacheDir,"landsat_products.db")
     # find MODIS tiles that cover landsat scene
     # MODIS products   
     MODIS_product = 'MCD15A3H'
@@ -447,11 +448,12 @@ def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     updateModisDB(modis_files,modisCacheDir)
     
     #====check what products are done against what Landsat data is available===
-    processedProductIDs = searchLandsatProductsDB(loc[0],loc[1],start_date,end_date,"LAI",landsatCacheDir)
-    df1 = processedProductIDs[["LANDSAT_PRODUCT_ID"]]
-    merged = df1.merge(productIDs, indicator=True, how='outer')
-    df3 = merged[merged['_merge'] != 'both' ]
-    productIDs = df3[["LANDSAT_PRODUCT_ID"]]
+    if os.path.exists(db_fn):
+        processedProductIDs = searchLandsatProductsDB(loc[0],loc[1],start_date,end_date,"LAI",landsatCacheDir)
+        df1 = processedProductIDs[["LANDSAT_PRODUCT_ID"]]
+        merged = df1.merge(productIDs, indicator=True, how='outer')
+        df3 = merged[merged['_merge'] != 'both' ]
+        productIDs = df3[["LANDSAT_PRODUCT_ID"]]
     # Convert Landsat SR downloads to ENVI format
     # Note:  May be some warnings about unknown field - ignore.
     print("Converting Landsat SR to ENVI format...")
