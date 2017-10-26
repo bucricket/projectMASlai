@@ -82,11 +82,9 @@ def searchModisDB(tiles,start_date,end_date,product,cacheDir):
     startdd = datetime.datetime.strptime(start_date, '%Y-%m-%d')
     enddd = datetime.datetime.strptime(end_date, '%Y-%m-%d')
     numDays= (enddd-startdd).days
-    years = range(startdd.year,enddd.year+1)
     laidates = np.array(range(1,366,4))
     df1 = pd.DataFrame.from_dict({"TILE":[],"YEAR":[],"DOY": [],"filename":[]})
     df2 = pd.DataFrame.from_dict({"TILE":[],"YEAR":[],"DOY": []})
-    count = 0
     for tile in tiles:
         for i in range(numDays+1):
             dd = startdd+datetime.timedelta(days=i)            
@@ -119,13 +117,15 @@ def updateLandsatProductsDB(landsatDB,filenames,cacheDir,product):
     ullon = landsatDB.upperLeftCornerLongitude
     lllat = landsatDB.lowerRightCornerLatitude
     lllon = landsatDB.lowerRightCornerLongitude
+    productIDs = landsatDB.LANDSAT_PRODUCT_ID
     
     if not os.path.exists(db_fn):
         conn = sqlite3.connect( db_fn )
         landsat_dict = {"acquisitionDate":date,"upperLeftCornerLatitude":ullat,
                       "upperLeftCornerLongitude":ullon,
                       "lowerRightCornerLatitude":lllat,
-                      "lowerRightCornerLongitude":lllon,"filename":filenames}
+                      "lowerRightCornerLongitude":lllon,
+                      "LANDSAT_PRODUCT_ID":productIDs,"filename":filenames}
         landsat_df = pd.DataFrame.from_dict(landsat_dict)
         landsat_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
         conn.close()
@@ -141,12 +141,26 @@ def updateLandsatProductsDB(landsatDB,filenames,cacheDir,product):
         landsat_dict = {"acquisitionDate":date,"upperLeftCornerLatitude":ullat,
                       "upperLeftCornerLongitude":ullon,
                       "lowerRightCornerLatitude":lllat,
-                      "lowerRightCornerLongitude":lllon,"filename":filenames}
+                      "lowerRightCornerLongitude":lllon,
+                      "LANDSAT_PRODUCT_ID":productIDs,"filename":filenames}
         landsat_df = pd.DataFrame.from_dict(landsat_dict)
         orig_df = orig_df.append(landsat_df,ignore_index=True)
         orig_df = orig_df.drop_duplicates(keep='last')
         orig_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
         conn.close()
+
+def searchLandsatProductsDB(lat,lon,start_date,end_date,product,cacheDir):
+    db_fn = os.path.join(cacheDir,"landsat_products.db")
+    conn = sqlite3.connect( db_fn )
+
+    out_df = pd.read_sql_query("SELECT * from %s WHERE (acquisitionDate >= '%s')"
+                   "AND (acquisitionDate < '%s') AND (upperLeftCornerLatitude > %f )"
+                   "AND (upperLeftCornerLongitude < %f ) AND "
+                   "(lowerRightCornerLatitude < %f) AND "
+                   "(lowerRightCornerLongitude > %f)" % 
+                   (product,start_date,end_date,lat,lon,lat,lon),conn)   
+    conn.close()
+    return out_df
         
 def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir): 
     db_fn = os.path.join(cacheDir,"modis_db.db")
@@ -168,6 +182,7 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
         os.makedirs(product_path)
     if os.path.exists(db_fn):
         out_df = searchModisDB(tiles,start_date,end_date,product,cacheDir) 
+        print(len(out_df))
         filenames = []
         for i in range(len(out_df)):
             year = int(out_df.YEAR[i])
@@ -183,7 +198,7 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
             day = modisOgg.getListDays()[0]
             listAllFiles = modisOgg.getFilesList(day)
             listFilesDown = modisOgg.checkDataExist(listAllFiles)
-            filenames.append(os.path.join(product_path,listFilesDown[0]))
+            filenames.append(os.path.join(product_path,listFilesDown))
             modisOgg.dayDownload(day, listFilesDown)
             modisOgg.closeFilelist()
             
@@ -421,12 +436,17 @@ def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     search_df = getlandsatdata.search(loc[0],loc[1],start_date,end_date,cloud,available,landsatCacheDir,sat)
     productIDs = search_df.LANDSAT_PRODUCT_ID
     paths = search_df.local_file_path   
-    print(productIDs)
     # download MODIS LAI over the same area and time
     print("Downloading MODIS data...")
     modis_files = get_modis_lai(tiles,MODIS_product,version,start_date,end_date,("%s"% earth_user,"%s"% earth_pass),modisCacheDir)
-    print(paths)
     updateModisDB(modis_files,modisCacheDir)
+    
+    #====check what products are done against what Landsat data is available===
+    processedProductIDs = searchLandsatProductsDB(loc[0],loc[1],start_date,end_date,"LAI",landsatCacheDir)
+    df1 = processedProductIDs[["LANDSAT_PRODUCT_ID"]]
+    merged = df1.merge(productIDs, indicator=True, how='outer')
+    df3 = merged[merged['_merge'] != 'both' ]
+    productIDs = df3[["LANDSAT_PRODUCT_ID"]]
     # Convert Landsat SR downloads to ENVI format
     # Note:  May be some warnings about unknown field - ignore.
     print("Converting Landsat SR to ENVI format...")
