@@ -85,6 +85,8 @@ def searchModisDB(tiles,start_date,end_date,product,cacheDir):
     laidates = np.array(range(1,366,4))
     df1 = pd.DataFrame.from_dict({"TILE":[],"YEAR":[],"DOY": [],"filename":[]})
     df2 = pd.DataFrame.from_dict({"TILE":[],"YEAR":[],"DOY": []})
+    if isinstance(tiles,basestring):
+        tiles =[tiles]
     for tile in tiles:
         for i in range(numDays+1):
             dd = startdd+datetime.timedelta(days=i)            
