@@ -131,9 +131,11 @@ def updateLandsatProductsDB(landsatDB,filenames,cacheDir,product):
         conn.close()
     else:
         conn = sqlite3.connect( db_fn )
-        try:            
+        res = conn.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = res.fetchall()[0]
+        if (product in tables):
             orig_df = pd.read_sql_query("SELECT * from %s" % product,conn)
-        except:
+        else:
             orig_df = pd.DataFrame()
             
         landsat_dict = {"acquisitionDate":date,"upperLeftCornerLatitude":ullat,
@@ -146,7 +148,9 @@ def updateLandsatProductsDB(landsatDB,filenames,cacheDir,product):
         orig_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
         conn.close()
         
-def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):  
+def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir): 
+    db_fn = os.path.join(cacheDir,"modis_db.db")
+    conn = sqlite3.connect( db_fn )
     startdd = datetime.datetime.strptime(start_date, '%Y-%m-%d')
     enddd = datetime.datetime.strptime(end_date, '%Y-%m-%d')
     numDays= (enddd-startdd).days
@@ -162,9 +166,8 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
     product_path = os.path.join(cacheDir,product)   
     if not os.path.exists(product_path):
         os.makedirs(product_path)
-    try:
+    if os.path.exists(db_fn):
         out_df = searchModisDB(tiles,start_date,end_date,product,cacheDir) 
-        pass
         filenames = []
         for i in range(len(out_df)):
             year = int(out_df.YEAR[i])
@@ -184,7 +187,7 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
             modisOgg.dayDownload(day, listFilesDown)
             modisOgg.closeFilelist()
             
-    except:
+    else:
         
         modisOgg = downModis(url="https://e4ftl01.cr.usgs.gov", destinationFolder=product_path, 
                              user=auth[0], password=auth[1], tiles=tiles, path=folder, 
@@ -214,7 +217,7 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
     #        modisOgg.downloadsAllDay()
         else:
             print("A problem with the connection occured")
-        
+    conn.close()   
     return filenames
 
                      
