@@ -46,35 +46,35 @@ if not os.path.exists(landsat_temp):
     os.mkdir(landsat_temp)
 
 def updateModisDB(filenames,cacheDir):
-    
-    db_fn = os.path.join(cacheDir,"modis_db.db")
-    fn = filenames[0].split(os.sep)[-1]
-    product = fn.split('.')[0]
-    years = []
-    doys = []
-    tiles = []
-    fns = []
-    for filename in filenames:
-        fn = filename.split(os.sep)[-1]
-        fns.append(filename)
-        years.append(fn.split('.')[1][1:5])
-        doys.append(fn.split('.')[1][5:9])
-        tiles.append(fn.split('.')[2])
-    if not os.path.exists(db_fn):
-        conn = sqlite3.connect( db_fn )
-        modis_dict = {"TILE":tiles,"YEAR":years,"DOY": doys,"filename":fns}
-        modis_df = pd.DataFrame.from_dict(modis_dict)
-        modis_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
-        conn.close()
-    else:
-        conn = sqlite3.connect( db_fn )
-        orig_df = pd.read_sql_query("SELECT * from %s" % product,conn)
-        modis_dict = {"TILE":tiles,"YEAR":years,"DOY": doys,"filename":fns}
-        modis_df = pd.DataFrame.from_dict(modis_dict)
-        orig_df = orig_df.append(modis_df,ignore_index=True)
-        orig_df = orig_df.drop_duplicates(keep='last')
-        orig_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
-        conn.close()
+    if len(filenames)>0:       
+        db_fn = os.path.join(cacheDir,"modis_db.db")
+        fn = filenames[0].split(os.sep)[-1]
+        product = fn.split('.')[0]
+        years = []
+        doys = []
+        tiles = []
+        fns = []
+        for filename in filenames:
+            fn = filename.split(os.sep)[-1]
+            fns.append(filename)
+            years.append(fn.split('.')[1][1:5])
+            doys.append(fn.split('.')[1][5:9])
+            tiles.append(fn.split('.')[2])
+        if not os.path.exists(db_fn):
+            conn = sqlite3.connect( db_fn )
+            modis_dict = {"TILE":tiles,"YEAR":years,"DOY": doys,"filename":fns}
+            modis_df = pd.DataFrame.from_dict(modis_dict)
+            modis_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
+            conn.close()
+        else:
+            conn = sqlite3.connect( db_fn )
+            orig_df = pd.read_sql_query("SELECT * from %s" % product,conn)
+            modis_dict = {"TILE":tiles,"YEAR":years,"DOY": doys,"filename":fns}
+            modis_df = pd.DataFrame.from_dict(modis_dict)
+            orig_df = orig_df.append(modis_df,ignore_index=True)
+            orig_df = orig_df.drop_duplicates(keep='last')
+            orig_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
+            conn.close()
 
 def searchModisDB(tiles,start_date,end_date,product,cacheDir):
     db_fn = os.path.join(cacheDir,"modis_db.db")
