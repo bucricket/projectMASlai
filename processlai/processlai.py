@@ -187,8 +187,8 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
         print(len(out_df))
         filenames = []
         for i in range(len(out_df)):
-            year = int(out_df.YEAR[i])
-            doy = int(out_df.DOY[i])
+            year = int(out_df.YEAR.iloc[i])
+            doy = int(out_df.DOY.iloc[i])
             fdate = datetime.date.fromordinal(datetime.date(year, 1, 1).toordinal() + doy - 1).isoformat()
             modisOgg = downModis(url="https://e4ftl01.cr.usgs.gov", user=auth[0],
                                            password=auth[1],
