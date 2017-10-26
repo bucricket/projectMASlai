@@ -150,7 +150,7 @@ def updateLandsatProductsDB(landsatDB,filenames,cacheDir,product):
         
 def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir): 
     db_fn = os.path.join(cacheDir,"modis_db.db")
-    conn = sqlite3.connect( db_fn )
+    
     startdd = datetime.datetime.strptime(start_date, '%Y-%m-%d')
     enddd = datetime.datetime.strptime(end_date, '%Y-%m-%d')
     numDays= (enddd-startdd).days
@@ -217,7 +217,6 @@ def get_modis_lai(tiles,product,version,start_date,end_date,auth,cacheDir):
     #        modisOgg.downloadsAllDay()
         else:
             print("A problem with the connection occured")
-    conn.close()   
     return filenames
 
                      
