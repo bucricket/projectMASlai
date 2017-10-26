@@ -101,7 +101,7 @@ def searchModisDB(tiles,start_date,end_date,product,cacheDir):
                                (product,tile,year,rday),conn)
                 df1 = df1.append(df,ignore_index=True)
                 df1 = df1[["DOY","TILE","YEAR"]]
-                row = pd.Series({"TILE":str(tile),"YEAR":str(year),"DOY": str(rday)})
+                row = pd.Series({"TILE": "%s" % tile,"YEAR":"%d" % year,"DOY": "%03d" % rday})
                 df2 = df2.append(row,ignore_index=True)
     merged = df2.merge(df1, indicator=True, how='outer')
     df3 = merged[merged['_merge'] != 'both' ]
