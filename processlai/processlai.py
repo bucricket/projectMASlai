@@ -458,21 +458,24 @@ def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
         productIDs = df3[["LANDSAT_PRODUCT_ID"]]
     # Convert Landsat SR downloads to ENVI format
     # Note:  May be some warnings about unknown field - ignore.
-    print("Converting Landsat SR to ENVI format...")
-    geotiff_2envi(paths,productIDs)
-    
-    # Generate MODIS-Landsat samples for LAI computation
-    print("Generating MODIS-Landsat samples...")
-    sample(paths,productIDs,MODIS_product)    
-    
-    # Compute Landsat LAI
-    print("Computing Landsat LAI...")
-    train(paths,productIDs,MODIS_product)
-    lai_fns,ndvi_fns,mask_fns = compute(paths,productIDs,MODIS_product,sat,landsatCacheDir)  
-    
-    updateLandsatProductsDB(search_df,lai_fns,landsatCacheDir,'LAI')
-    updateLandsatProductsDB(search_df,ndvi_fns,landsatCacheDir,'NDVI')
-    updateLandsatProductsDB(search_df,mask_fns,landsatCacheDir,'CF_MASK')
+    if len(productIDs)>0:
+        print("Converting Landsat SR to ENVI format...")
+        geotiff_2envi(paths,productIDs)
+        
+        # Generate MODIS-Landsat samples for LAI computation
+        print("Generating MODIS-Landsat samples...")
+        sample(paths,productIDs,MODIS_product)    
+        
+        # Compute Landsat LAI
+        print("Computing Landsat LAI...")
+        train(paths,productIDs,MODIS_product)
+        lai_fns,ndvi_fns,mask_fns = compute(paths,productIDs,MODIS_product,sat,landsatCacheDir)  
+        
+        updateLandsatProductsDB(search_df,lai_fns,landsatCacheDir,'LAI')
+        updateLandsatProductsDB(search_df,ndvi_fns,landsatCacheDir,'NDVI')
+        updateLandsatProductsDB(search_df,mask_fns,landsatCacheDir,'CF_MASK')
+    else:
+        print("Nothing to process!!")
 
 def main():
     # Get time and location from user
