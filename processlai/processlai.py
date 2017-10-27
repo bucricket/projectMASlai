@@ -459,6 +459,10 @@ def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     # Convert Landsat SR downloads to ENVI format
     # Note:  May be some warnings about unknown field - ignore.
     if len(productIDs)>0:
+        paths = []
+        for productID in productIDs:
+            output_df = getlandsatdata.searchProduct(productID,landsatCacheDir,sat)
+            paths.append(output_df.local_file_path)
         print("Converting Landsat SR to ENVI format...")
         geotiff_2envi(paths,productIDs)
         
