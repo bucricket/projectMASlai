@@ -450,7 +450,7 @@ def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     # download MODIS LAI over the same area and time
     print("Downloading MODIS data...")
     modis_files = get_modis_lai(tiles,MODIS_product,version,start_date,end_date,("%s"% earth_user,"%s"% earth_pass),modisCacheDir)
-    modis_files = glob.glob(MODIS_path+"*.hdf")
+    modis_files = glob.glob(MODIS_path+"/*.hdf")
     updateModisDB(modis_files,modisCacheDir)
     
     #====check what products are done against what Landsat data is available===
