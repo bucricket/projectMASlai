@@ -438,6 +438,7 @@ def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     # find MODIS tiles that cover landsat scene
     # MODIS products   
     MODIS_product = 'MCD15A3H'
+    MODIS_path = os.path.join(modisCacheDir,MODIS_product)
     version = '006'
     [v,h] = latlon_2modis_tile(loc[0],loc[1])
     tiles = ["h%02dv%02d" %(h,v)]
@@ -449,7 +450,7 @@ def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     # download MODIS LAI over the same area and time
     print("Downloading MODIS data...")
     modis_files = get_modis_lai(tiles,MODIS_product,version,start_date,end_date,("%s"% earth_user,"%s"% earth_pass),modisCacheDir)
-    print modis_files
+    modis_files = glob.glob(MODIS_path+"*.hdf")
     updateModisDB(modis_files,modisCacheDir)
     
     #====check what products are done against what Landsat data is available===
