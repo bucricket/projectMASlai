@@ -262,7 +262,8 @@ def geotiff_2envi(paths,productIDs):
     l8bands = ["sr_band2","sr_band3","sr_band4","sr_band5","sr_band6","sr_band7","pixel_qa"] 
     count=0
     for productID in productIDs:
-        fstem = os.path.join(paths[count],productID)
+#        fstem = os.path.join(paths[count],productID)
+        fstem = os.path.join(landsat_temp,productID)
         count+=1
         for i in range(len(bands)):
             tifFile = fstem+"_%s.tif" % l8bands[i]
@@ -295,10 +296,10 @@ def sample(paths,productIDs,MODIS_product):
         modFiles = glob.glob(os.path.join(modis_base,"%s" % MODIS_product,"%s.A%d%03d.*.hdf" % (MODIS_product,year,mdoy)))
         sam_file = os.path.join(landsat_LAI,"SR_LAI.%s.%s.%s_A%d%03d.txt" %(date,sceneID,MODIS_product,year,mdoy))
         #====convert the qa to cfmask=====
+        fstem = os.path.join(landsat_temp,productID)
         datFile_qa = fstem+"_%s.%s.dat" % ("pixel_qa",bands[6])
         datFile_cfmask = fstem+"_%s.%s.dat" % (l8bands[6],bands[6])
         subprocess.call(["%s" % convert, "-lndsr", "%s" % datFile_qa, "-cmask", "%s" % datFile_cfmask])
-        
         for i in range(len(modFiles)):  
             fn = os.path.join(landsat_LAI,"slai%d.inp" % i)
             file = open(fn, "w")
@@ -399,6 +400,7 @@ def compute(paths,productIDs,MODIS_product,sat,cacheDir):
         filestem = os.path.join(landsat_LAI,"lndsr_modlai_samples.combined_%s-%s" %(start_date,end_date))
         laiFN = os.path.join(landsat_LAI,"lndlai.%s.hdf" % sceneID)
         fn = os.path.join(landsat_LAI,"compute_lai.inp")
+        fstem = os.path.join(landsat_temp,productID)
         file = open(fn, "w")
         file.write("LANDSAT_BASE_BLUE = %s_%s.%s.dat\n" % (fstem,l8bands[0],bands[0]))
         file.write("LANDSAT_BASE_GREEN = %s_%s.%s.dat\n" % (fstem,l8bands[1],bands[1]))
@@ -447,6 +449,7 @@ def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     # download MODIS LAI over the same area and time
     print("Downloading MODIS data...")
     modis_files = get_modis_lai(tiles,MODIS_product,version,start_date,end_date,("%s"% earth_user,"%s"% earth_pass),modisCacheDir)
+    print modis_files
     updateModisDB(modis_files,modisCacheDir)
     
     #====check what products are done against what Landsat data is available===
