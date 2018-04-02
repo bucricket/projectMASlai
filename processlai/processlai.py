@@ -272,7 +272,7 @@ def geotiff_2envi(paths,productIDs):
             subprocess.call(["gdal_translate","-q", "-of", "ENVI","%s" % tifFile, "%s" % datFile ])
             os.rename("%s.hdr" % datFile[:-4],"%s.dat.hdr" % datFile[:-4])
 
-def sample(paths,productIDs,MODIS_product):    
+def sample(paths,productIDs,MODIS_product,modisCacheDir):    
     sample = 'lndlai_sample'
     convert = 'lndqa2fmask'
     bands = ["blue","green","red","nir","swir1","swir2","cloud"]
@@ -293,7 +293,7 @@ def sample(paths,productIDs,MODIS_product):
         # find the 4 day MODIS doy prior to the Landsat doy
         mdoy = int((int((float(ldoy)-1.)/4.)*4.)+1)
         
-        modFiles = glob.glob(os.path.join(modis_base,"%s" % MODIS_product,"%s.A%d%03d.*.hdf" % (MODIS_product,year,mdoy)))
+        modFiles = glob.glob(os.path.join(modisCacheDir,"%s" % MODIS_product,"%s.A%d%03d.*.hdf" % (MODIS_product,year,mdoy)))
         sam_file = os.path.join(landsat_LAI,"SR_LAI.%s.%s.%s_A%d%03d.txt" %(date,sceneID,MODIS_product,year,mdoy))
         #====convert the qa to cfmask=====
         fstem = os.path.join(landsat_temp,productID)
@@ -370,7 +370,7 @@ def train(paths,productIDs,MODIS_product):
     nrules = 5
     subprocess.call(["%s" % cubist , "-f" ,"%s" % filestem, "-r", "%d" % nrules, "-u"])
 
-def compute(paths,productIDs,MODIS_product,sat,cacheDir):    
+def compute(paths,productIDs,sat,cacheDir):    
     lndbio ='lndlai_compute'
     bands = ["blue","green","red","nir","swir1","swir2","cloud"]
     l8bands = ["sr_band2","sr_band3","sr_band4","sr_band5","sr_band6","sr_band7","cfmask"] 
@@ -472,12 +472,12 @@ def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
         
         # Generate MODIS-Landsat samples for LAI computation
         print("Generating MODIS-Landsat samples...")
-        sample(paths,productIDs,MODIS_product)    
+        sample(paths,productIDs,MODIS_product,modisCacheDir)    
         
         # Compute Landsat LAI
         print("Computing Landsat LAI...")
         train(paths,productIDs,MODIS_product)
-        lai_fns,ndvi_fns,mask_fns = compute(paths,productIDs,MODIS_product,sat,landsatCacheDir)  
+        lai_fns,ndvi_fns,mask_fns = compute(paths,productIDs,sat,landsatCacheDir)  
         
         updateLandsatProductsDB(output_df,lai_fns,landsatCacheDir,'LAI')
         updateLandsatProductsDB(output_df,ndvi_fns,landsatCacheDir,'NDVI')
