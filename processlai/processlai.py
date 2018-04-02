@@ -262,11 +262,11 @@ def geotiff_2envi(paths,productIDs):
     l8bands = ["sr_band2","sr_band3","sr_band4","sr_band5","sr_band6","sr_band7","pixel_qa"] 
     count=0
     for productID in productIDs:
-#        fstem = os.path.join(paths[count],productID)
+        fstem_in = os.path.join(paths[count],productID)
         fstem = os.path.join(landsat_temp,productID)
         count+=1
         for i in range(len(bands)):
-            tifFile = fstem+"_%s.tif" % l8bands[i]
+            tifFile = fstem_in+"_%s.tif" % l8bands[i]
             datFile = fstem+"_%s.%s.dat" % (l8bands[i],bands[i])
             #subprocess.call(["%s" % geotiffConvert ,"%s" % tifFile, "%s" % datFile])
             subprocess.call(["gdal_translate","-q", "-of", "ENVI","%s" % tifFile, "%s" % datFile ])
