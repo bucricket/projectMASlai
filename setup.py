@@ -4,8 +4,6 @@ from __future__ import print_function
 import subprocess
 import os
 
-
-
 # set project base directory structure
 base = os.getcwd()
     
@@ -16,7 +14,7 @@ except ImportError:
     from distutils.core import setup
     setup_kwargs = {'scripts': ['bin/processlai']}
     
-from preparepydisalexi import __version__
+from processlai import __version__
 
 #=====build DMS binaries===============================
 # get Anaconda root location
@@ -25,7 +23,6 @@ out = p.communicate()
 condaPath = out[0][:-1]
     
 prefix  = os.environ.get('PREFIX')
-print (prefix)
 processDi = os.path.abspath(os.path.join(prefix,os.pardir))
 processDir = os.path.join(processDi,'work')
 libEnv = os.path.join(prefix,'lib')
@@ -67,12 +64,11 @@ os.chdir(mkPath)
 subprocess.call(["scons","-Q","--prefix=%s" % prefix,"install"])
 subprocess.call(["scons","-c"])
 
-print ("installing GeoTiff2ENVI...")
-mkPath = os.path.join(processDir,'source','Landsat_LAI','GeoTiff2ENVI')
+print ("installing lndqa2cfmask...")
+mkPath = os.path.join(processDir,'source','Landsat_LAI','qa2fmask')
 os.chdir(mkPath)
 subprocess.call(["scons","-Q","--prefix=%s" % prefix,"install"])
 subprocess.call(["scons","-c"])
-
 
 print ("installing Cubist...")
 mkPath = os.path.join(processDir,'source','Cubist')
@@ -92,7 +88,11 @@ setup(
     author="Mitchell Schull",
     author_email="mitch.schull@noaa.gov",
     url="https://github.com/bucricket/projectMASlai.git",
-    packages= ['processlai'],
+    py_modules=['processlai.processlai','processlai.utils',
+                'processlai.Clients','processlai.conf',
+                'processlai.Downloaders','processlai.Exceptions',
+                'processlai.landsatTools'],
+    #packages= ['processlai'],
     platforms='Posix; MacOS X; Windows',
     license='BSD 3-Clause',
     classifiers=[
