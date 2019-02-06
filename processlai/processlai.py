@@ -21,7 +21,8 @@ import keyring
 import sqlite3
 from pyproj import Proj
 from .utils import folders
-from getlandsatdata import getlandsatdata
+import wget
+# from getlandsatdata import getlandsatdata
 import pycurl
 from .landsatTools import landsat_metadata
 import logging
@@ -75,6 +76,95 @@ def updateModisDB(filenames,cacheDir):
             orig_df = orig_df.drop_duplicates(keep='last')
             orig_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
             conn.close()
+
+def search(lat, lon, start_date, end_date, cloud, available, cacheDir, sat):
+    end = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+    # this is a landsat-util work around when it fails
+    if sat == 7:
+        metadataUrl = 'https://landsat.usgs.gov/landsat/metadata_service/bulk_metadata_files/LANDSAT_ETM_C1.csv'
+    else:
+        metadataUrl = 'https://landsat.usgs.gov/landsat/metadata_service/bulk_metadata_files/LANDSAT_8_C1.csv'
+
+    fn = os.path.join(cacheDir, metadataUrl.split(os.sep)[-1])
+    # looking to see if metadata CSV is available and if its up to the date needed
+    if os.path.exists(fn):
+        d = datetime.datetime.fromtimestamp(os.path.getmtime(fn))
+        db_name = os.path.join(cacheDir, fn.split(os.sep)[-1][:-4] + '.db')
+        if not os.path.exists(db_name):
+            orig_df = pd.read_csv(fn)
+            orig_df['sr'] = pd.Series(np.tile('N', len(orig_df)))
+            orig_df['bt'] = pd.Series(np.tile('N', len(orig_df)))
+            orig_df['local_file_path'] = ''
+            conn = sqlite3.connect(db_name)
+            orig_df.to_sql("raw_data", conn, if_exists="replace", index=False)
+            conn.close()
+        #            orig_df = pd.read_sql_query("SELECT * from raw_data",conn)
+
+        if (end.year > d.year) and (end.month > d.month) and (end.day > d.day):
+            wget.download(metadataUrl, out=fn)
+            metadata = pd.read_csv(fn)
+            metadata['sr'] = pd.Series(np.tile('N', len(metadata)))
+            metadata['bt'] = pd.Series(np.tile('N', len(metadata)))
+            orig_df = pd.read_sql_query("SELECT * from raw_data", conn)
+            orig_df = orig_df.append(metadata, ignore_index=True)
+            orig_df = orig_df.drop_duplicates(subset='sceneID', keep='first')
+            orig_df.to_sql("raw_data", conn, if_exists="replace", index=False)
+    else:
+        wget.download(metadataUrl, out=fn)
+        db_name = os.path.join(cacheDir, fn.split(os.sep)[-1][:-4] + '.db')
+        conn = sqlite3.connect(db_name)
+        metadata = pd.read_csv(fn)
+        metadata['sr'] = pd.Series(np.tile('N', len(metadata)))
+        metadata['bt'] = pd.Series(np.tile('N', len(metadata)))
+        metadata['local_file_path'] = ''
+        metadata.to_sql("raw_data", conn, if_exists="replace", index=False)
+        conn.close()
+    conn = sqlite3.connect(db_name)
+    if sat == 8:
+        output = pd.read_sql_query("SELECT * from raw_data WHERE (acquisitionDate >= '%s')"
+                                   "AND (acquisitionDate < '%s') AND (upperLeftCornerLatitude > %f )"
+                                   "AND (upperLeftCornerLongitude < %f ) AND "
+                                   "(lowerRightCornerLatitude < %f) AND "
+                                   "(lowerRightCornerLongitude > %f) AND "
+                                   "(cloudCover <= %d) AND (sr = '%s') AND "
+                                   "(sensor = 'OLI_TIRS')" %
+                                   (start_date, end_date, lat, lon, lat, lon, cloud, available), conn)
+    else:
+        output = pd.read_sql_query("SELECT * from raw_data WHERE (acquisitionDate >= '%s')"
+                                   "AND (acquisitionDate < '%s') AND (upperLeftCornerLatitude > %f )"
+                                   "AND (upperLeftCornerLongitude < %f ) AND "
+                                   "(lowerRightCornerLatitude < %f) AND "
+                                   "(lowerRightCornerLongitude > %f) AND "
+                                   "(cloudCover <= %d) AND (sr = '%s')" %
+                                   (start_date, end_date, lat, lon, lat, lon, cloud, available), conn)
+    conn.close()
+    return output
+
+
+def searchProduct(productID, db_path, sat):
+    if sat == 7:
+        metadataUrl = 'https://landsat.usgs.gov/landsat/metadata_service/bulk_metadata_files/LANDSAT_ETM_C1.csv'
+        db_name = os.path.join(db_path, 'LANDSAT_ETM_C1.db')
+    else:
+        metadataUrl = 'https://landsat.usgs.gov/landsat/metadata_service/bulk_metadata_files/LANDSAT_8_C1.csv'
+        db_name = os.path.join(db_path, 'LANDSAT_8_C1.db')
+
+    fn = os.path.join(db_path, metadataUrl.split(os.sep)[-1])
+    if not os.path.exists(db_name):
+        if not os.path.exists(fn):
+            wget.download(metadataUrl, out=fn)
+        conn = sqlite3.connect(db_name)
+        orig_df = pd.read_csv(fn)
+        orig_df['sr'] = pd.Series(np.tile('N', len(orig_df)))
+        orig_df['bt'] = pd.Series(np.tile('N', len(orig_df)))
+        orig_df['local_file_path'] = ''
+        orig_df.to_sql("raw_data", conn, if_exists="replace", index=False)
+        conn.close()
+
+    conn = sqlite3.connect(db_name)
+    output = pd.read_sql_query("SELECT * from raw_data WHERE (LANDSAT_PRODUCT_ID == '%s')" % productID, conn)
+    conn.close()
+    return output
 
 def searchModisDB(tiles,start_date,end_date,product,cacheDir):
     db_fn = os.path.join(cacheDir,"modis_db.db")
@@ -444,7 +534,7 @@ def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     tiles = ["h%02dv%02d" %(h,v)]
     #====search for available data=============================================
     available = 'Y'
-    search_df = getlandsatdata.search(loc[0],loc[1],start_date,end_date,cloud,available,landsatCacheDir,sat)
+    search_df = search(loc[0],loc[1],start_date,end_date,cloud,available,landsatCacheDir,sat)
     productIDs = search_df.LANDSAT_PRODUCT_ID
     paths = search_df.local_file_path   
     # download MODIS LAI over the same area and time
@@ -465,7 +555,7 @@ def get_LAI(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     if len(productIDs)>0:
         output_df = pd.DataFrame()
         for productID in productIDs:
-            output_df = output_df.append(getlandsatdata.searchProduct(productID,landsatCacheDir,sat),ignore_index=True)
+            output_df = output_df.append(searchProduct(productID,landsatCacheDir,sat),ignore_index=True)
         paths = output_df.local_file_path
         print("Converting Landsat SR to ENVI format...")
         geotiff_2envi(paths,productIDs)

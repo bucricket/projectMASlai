@@ -1,0 +1,83 @@
+package:
+  name: projectmaslai
+  version: 0.4.0
+
+source:
+#  git_url: https://git#hub.com/bucricket/projectMASlai.git
+#  git_tag: version_0.4.0
+   path: ../projectMASlai
+  
+#  patches:
+   # List any patch files here
+   # - fix.patch
+
+build:
+  number: 0
+  script: 
+
+  entry_points:
+    # Put any entry points (scripts to be generated automatically) here. The
+    # syntax is module:function.  For example
+    #
+    # - landsat-util = landsat-util:main
+    #
+    # Would create an entry point called landsat-util that calls landsat-util.main()
+
+    - processlai=processlai.processlai:main
+    
+requirements:
+  build:
+    - python 2.7*
+    - setuptools
+    - scons
+    - gcc
+    - jpeg
+    - geotiff
+    - zlib
+    - hdfeos2 2.19*
+    - szip
+    - libtiff
+    - hdf5
+    - xz
+    - hdf4
+    
+  run:
+    - python 2.7*
+    - keyring >=9.3.1
+    - keyrings.alt >=1.2
+    - gdal 2.1*
+    - pymodis
+    - pycurl
+    #- pandas ==0.18.1
+    - pandas
+    - simplejson
+    - geocoder
+    - wget
+    - hdf4
+    - pyproj
+    - szip
+    - projectmasgetlandsat
+
+test:
+  # Python imports
+  imports:
+    - processlai
+
+  # commands:
+    # You can put test commands to be run here.  Use this to test that the
+    # entry points work.
+
+  requires:
+
+    # Put any additional test requirements here.  For example
+    # - nose
+
+about:
+  home: https://github.com/bucricket/projectMASlai.git
+  license: CCO
+  summary: 'A tool to disaggregate ALEXI ET'
+  license_family: BSD
+
+# See
+# http://docs.continuum.io/conda/build.html for
+# more information about meta.yaml
