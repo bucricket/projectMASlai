@@ -32,9 +32,11 @@ requirements:
     - scons
     - gcc
     - jpeg
+    - proj4
     - geotiff
     - zlib
-    - hdfeos2 2.19*
+#    - hdfeos2 2.19*
+    - hdfeos2
     - szip
     - libtiff
     - hdf5
@@ -45,7 +47,7 @@ requirements:
     - python 2.7*
     - keyring >=9.3.1
     - keyrings.alt >=1.2
-    - gdal 2.1*
+    - gdal
     - pymodis
     - pycurl
     #- pandas ==0.18.1
