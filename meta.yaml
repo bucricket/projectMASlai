@@ -39,7 +39,7 @@ requirements:
     - hdfeos2
     - szip
     - libtiff
-    - hdf5
+    - hdf5==1.10.1
     - xz
     - hdf4
     
