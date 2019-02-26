@@ -28,12 +28,10 @@ build:
 requirements:
   build:
     - {{ compiler('c') }}
-
-  host:
-    - python 2.7*
     - setuptools
     - scons
-    - gcc
+  host:
+    - python 2.7*
     - jpeg
     - proj4
     - geotiff
@@ -42,7 +40,7 @@ requirements:
     - hdfeos2
     - szip
     - libtiff
-    - hdf5==1.10.1
+    - hdf5
     - xz
     - hdf4
     
