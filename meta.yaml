@@ -30,19 +30,21 @@ requirements:
     - {{ compiler('c') }}
     - setuptools
     - scons
+    ignore_run_exports:
+      - geotiff
+      - zlib
+      - libtiff
+      - hdf5
+      - xz
+      - hdf4
   host:
     - python 2.7*
     - jpeg
     - proj4
-    - geotiff
-    - zlib
 #    - hdfeos2 2.19*
     - hdfeos2
     - szip
-    - libtiff
-    - hdf5
-    - xz
-    - hdf4
+
     
   run:
     - python 2.7*
