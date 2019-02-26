@@ -30,13 +30,16 @@ requirements:
     - {{ compiler('c') }}
     - setuptools
     - scons
-    ignore_run_exports:
-      - geotiff
-      - zlib
-      - libtiff
-      - hdf5
-      - xz
-      - hdf4
+
+build:
+  ignore_run_exports:
+    - geotiff
+    - zlib
+    - libtiff
+    - hdf5
+    - xz
+    - hdf4
+
   host:
     - python 2.7*
     - jpeg
