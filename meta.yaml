@@ -3,8 +3,8 @@ package:
   version: 0.4.0
 
 source:
-  git_url: https://git#hub.com/bucricket/projectMASlai.git
-  git_tag: version_0.4.0
+  git_url: https://github.com/bucricket/projectMASlai.git
+#  git_tag: version_0.4.0
 #   path: ../projectMASlai
   
 #  patches:
