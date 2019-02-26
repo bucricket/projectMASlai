@@ -3,9 +3,9 @@ package:
   version: 0.4.0
 
 source:
-#  git_url: https://git#hub.com/bucricket/projectMASlai.git
+  git_url: https://git#hub.com/bucricket/projectMASlai.git
 #  git_tag: version_0.4.0
-   path: ../projectMASlai
+#   path: ../projectMASlai
   
 #  patches:
    # List any patch files here
