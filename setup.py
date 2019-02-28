@@ -40,7 +40,7 @@ dest_lib = os.path.join(libDir,'liblzma.a')
 shutil.copyfile(src_lib, dest_lib)
 
 src_lib = os.path.join(libEnv,'libjpeg.a')
-dest_lib = os.path.join(libDir,'libjoeg.a')
+dest_lib = os.path.join(libDir,'libjpeg.a')
 shutil.copyfile(src_lib, dest_lib)
 
 src_lib = os.path.join(libEnv,'libgeotiff.a')
