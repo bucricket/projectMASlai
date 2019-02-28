@@ -27,11 +27,12 @@ build:
     
 requirements:
   build:
-    - python 2.7*
     - setuptools
-    - binutils
+    - {{ compiler('c') }}
+    - {{ cdt('xorg-x11-proto-devel') }}  # [linux]
     - scons
-    - gcc
+  host:
+    - python
     - jpeg
     - proj4
     - geotiff
@@ -43,9 +44,8 @@ requirements:
     - hdf5
     - xz
     - hdf4
-
   run:
-    - python 2.7*
+    - python
     - keyring >=9.3.1
     - keyrings.alt >=1.2
     - gdal
