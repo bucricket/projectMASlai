@@ -31,25 +31,25 @@ libDir = os.path.join(processDir,'source','lib')
 
 #====Creating SYMBOLIC L:INKS===========
 
-subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libtiff.a'),
+subprocess.call(["cp", "%s" % os.path.join(libEnv,'libtiff.a'),
 "%s" % os.path.join(libDir,'libtiff.a')])
-subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'liblzma.a'),
+subprocess.call(["cp", "%s" % os.path.join(libEnv,'liblzma.a'),
 "%s" % os.path.join(libDir,'liblzma.a')])
-subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libjpeg.a'),
+subprocess.call(["cp", "%s" % os.path.join(libEnv,'libjpeg.a'),
 "%s" % os.path.join(libDir,'libjpeg.a')])
-subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libgeotiff.a'),
+subprocess.call(["cp", "%s" % os.path.join(libEnv,'libgeotiff.a'),
 "%s" % os.path.join(libDir,'libgeotiff.a')])
-subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libsz.a'),
+subprocess.call(["cp", "%s" % os.path.join(libEnv,'libsz.a'),
 "%s" % os.path.join(libDir,'libsz.a')])
-subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libGctp.a'),
+subprocess.call(["cp", "%s" % os.path.join(libEnv,'libGctp.a'),
 "%s" % os.path.join(libDir,'libGctp.a')])
-subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libdf.a'),
+subprocess.call(["cp", "%s" % os.path.join(libEnv,'libdf.a'),
 "%s" % os.path.join(libDir,'libdf.a')])
-subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libz.a'),
+subprocess.call(["cp", "%s" % os.path.join(libEnv,'libz.a'),
 "%s" % os.path.join(libDir,'libz.a')])
-subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libmfhdf.a'),
+subprocess.call(["cp", "%s" % os.path.join(libEnv,'libmfhdf.a'),
 "%s" % os.path.join(libDir,'libmfhdf.a')])
-subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libhdfeos.a'),
+subprocess.call(["cp", "%s" % os.path.join(libEnv,'libhdfeos.a'),
 "%s" % os.path.join(libDir,'libhdfeos.a')])
 
 print ("installing lndlai_compute...")
