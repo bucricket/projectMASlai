@@ -20,7 +20,7 @@ sourcePath = os.path.join(base,'source')
 binPath = os.path.join(prefix,'bin')
 print("source path: %s" % sourcePath)
 #if not platform.system()=='Linux':
-# env.Replace(CC = os.path.join(binPath,'gcc'))
+env.Replace(CC = '$GCC')
 #else:
     #env.Replace(CC = 'gcc')
 print ("source: %s" % sourcePath)    
