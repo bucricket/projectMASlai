@@ -1,0 +1,23 @@
+name: Maxiconda
+version: 2.5.5
+
+install_in_dependency_order: True
+
+channels:
+  - http://repo.anaconda.com/pkgs/main/
+
+specs:
+  - python 3.5*
+  - conda
+  - nomkl                                [not win]
+  - numpy
+  - scipy
+  - pandas
+  - notebook
+  - matplotlib
+  - lighttpd                             [unix]
+
+exclude:
+  - qt
+  - sip
+  - pyqt
