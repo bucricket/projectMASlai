@@ -60,7 +60,15 @@ requirements:
     - pyproj
     - szip
     - projectmasgetlandsat
-
+  ignore_run_exports:
+    - hdf5
+    - xz
+    - libtiff
+    - szip
+    - proj4
+    - hdf4
+    - zlib
+    -
 test:
   # Python imports
   imports:
