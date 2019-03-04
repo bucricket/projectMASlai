@@ -21,7 +21,7 @@ import keyring
 import sqlite3
 from pyproj import Proj
 from .utils import folders
-import wgret
+import wget
 # from getlandsatdata import getlandsatdata
 import pycurl
 from .landsatTools import landsat_metadata
