@@ -78,6 +78,8 @@ def updateModisDB(filenames,cacheDir):
             conn.close()
 
 def search(lat, lon, start_date, end_date, cloud, available, cacheDir, sat):
+    columns = ['acquisitionDate', 'acquisitionDate','upperLeftCornerLatitude', 'upperLeftCornerLongitude',
+               'lowerRightCornerLatitude' , 'lowerRightCornerLongitude', 'cloudCover']
     end = datetime.datetime.strptime(end_date, '%Y-%m-%d')
     # this is a landsat-util work around when it fails
     if sat == 7:
@@ -91,7 +93,7 @@ def search(lat, lon, start_date, end_date, cloud, available, cacheDir, sat):
         d = datetime.datetime.fromtimestamp(os.path.getmtime(fn))
         db_name = os.path.join(cacheDir, fn.split(os.sep)[-1][:-4] + '.db')
         if not os.path.exists(db_name):
-            orig_df = pd.read_csv(fn)
+            orig_df = pd.read_csv(fn, usecols=columns)
             orig_df['sr'] = pd.Series(np.tile('N', len(orig_df)))
             orig_df['bt'] = pd.Series(np.tile('N', len(orig_df)))
             orig_df['local_file_path'] = ''
@@ -102,7 +104,7 @@ def search(lat, lon, start_date, end_date, cloud, available, cacheDir, sat):
 
         if (end.year > d.year) and (end.month > d.month) and (end.day > d.day):
             wget.download(metadataUrl, out=fn)
-            metadata = pd.read_csv(fn)
+            metadata = pd.read_csv(fn, usecols=columns)
             metadata['sr'] = pd.Series(np.tile('N', len(metadata)))
             metadata['bt'] = pd.Series(np.tile('N', len(metadata)))
             orig_df = pd.read_sql_query("SELECT * from raw_data", conn)
@@ -113,7 +115,7 @@ def search(lat, lon, start_date, end_date, cloud, available, cacheDir, sat):
         wget.download(metadataUrl, out=fn)
         db_name = os.path.join(cacheDir, fn.split(os.sep)[-1][:-4] + '.db')
         conn = sqlite3.connect(db_name)
-        metadata = pd.read_csv(fn)
+        metadata = pd.read_csv(fn, usecols=columns)
         metadata['sr'] = pd.Series(np.tile('N', len(metadata)))
         metadata['bt'] = pd.Series(np.tile('N', len(metadata)))
         metadata['local_file_path'] = ''
@@ -142,6 +144,8 @@ def search(lat, lon, start_date, end_date, cloud, available, cacheDir, sat):
 
 
 def searchProduct(productID, db_path, sat):
+    columns = ['acquisitionDate', 'acquisitionDate','upperLeftCornerLatitude', 'upperLeftCornerLongitude',
+               'lowerRightCornerLatitude' , 'lowerRightCornerLongitude', 'cloudCover']
     if sat == 7:
         metadataUrl = 'https://landsat.usgs.gov/landsat/metadata_service/bulk_metadata_files/LANDSAT_ETM_C1.csv'
         db_name = os.path.join(db_path, 'LANDSAT_ETM_C1.db')
@@ -154,7 +158,7 @@ def searchProduct(productID, db_path, sat):
         if not os.path.exists(fn):
             wget.download(metadataUrl, out=fn)
         conn = sqlite3.connect(db_name)
-        orig_df = pd.read_csv(fn)
+        orig_df = pd.read_csv(fn, usecols=columns)
         orig_df['sr'] = pd.Series(np.tile('N', len(orig_df)))
         orig_df['bt'] = pd.Series(np.tile('N', len(orig_df)))
         orig_df['local_file_path'] = ''
