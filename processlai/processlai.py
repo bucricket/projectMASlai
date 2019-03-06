@@ -18,13 +18,11 @@ import datetime
 import argparse
 import getpass
 import keyring
-import sqlite3
 from pyproj import Proj
-from .utils import folders
+from utils import folders
 import wget
-# from getlandsatdata import getlandsatdata
 import pycurl
-from .landsatTools import landsat_metadata
+from landsatTools import landsat_metadata
 import logging
 from pymodis.downmodis import downModis
 
