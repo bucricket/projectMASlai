@@ -19,10 +19,10 @@ import argparse
 import getpass
 import keyring
 from pyproj import Proj
-from processlai.utils import folders
+from .utils import folders
 import wget
 import pycurl
-from processlai.landsatTools import landsat_metadata
+from .landsatTools import landsat_metadata
 import logging
 from pymodis.downmodis import downModis
 
