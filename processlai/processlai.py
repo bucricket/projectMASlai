@@ -405,9 +405,9 @@ def get_LAI(loc, start_date, end_date, earth_user, earth_pass, cloud, sat, cache
     productIDs = find_not_processed(downloaded, landsatCacheDir)
     paths = []
     for productID in productIDs:
-        sat = productID.split("_")[0][-1]
+        sat_str = productID.split("_")[0][-1]
         scene = productID.split("_")[2]
-        paths = paths + [os.path.join(landsatCacheDir, 'L%s/%s/RAW_DATA/' % (sat, scene))]
+        paths = paths + [os.path.join(landsatCacheDir, 'L%s/%s/RAW_DATA/' % (sat_str, scene))]
 
     # download MODIS LAI over the same area and time
     print("Downloading MODIS data...")
