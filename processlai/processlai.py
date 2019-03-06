@@ -48,7 +48,7 @@ if not os.path.exists(landsat_temp):
 def search(lat, lon, start_date, end_date, cloud, cacheDir, sat):
     columns = ['acquisitionDate', 'acquisitionDate', 'upperLeftCornerLatitude', 'upperLeftCornerLongitude',
                'lowerRightCornerLatitude', 'lowerRightCornerLongitude', 'cloudCover', 'sensor', 'LANDSAT_PRODUCT_ID']
-    end = datetime.strptime(end_date, '%Y-%m-%d')
+    end = datetime.datetime.strptime(end_date, '%Y-%m-%d')
     # this is a landsat-util work around when it fails
     if sat == 7:
         metadataUrl = 'https://landsat.usgs.gov/landsat/metadata_service/bulk_metadata_files/LANDSAT_ETM_C1.csv'
@@ -58,7 +58,7 @@ def search(lat, lon, start_date, end_date, cloud, cacheDir, sat):
     fn = os.path.join(cacheDir, metadataUrl.split(os.sep)[-1])
     # looking to see if metadata CSV is available and if its up to the date needed
     if os.path.exists(fn):
-        d = datetime.fromtimestamp(os.path.getmtime(fn))
+        d = datetime.datetime.fromtimestamp(os.path.getmtime(fn))
         if (end.year > d.year) and (end.month > d.month) and (end.day > d.day):
             wget.download(metadataUrl, out=fn)
             df = pd.read_csv(fn, usecols=columns)
