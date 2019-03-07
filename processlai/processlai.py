@@ -408,6 +408,7 @@ def get_LAI(loc, start_date, end_date, earth_user, earth_pass, cloud, sat, cache
         sat_str = productID.split("_")[0][-1]
         scene = productID.split("_")[2]
         paths = paths + [os.path.join(landsatCacheDir, 'L%s/%s/RAW_DATA/' % (sat_str, scene))]
+    paths = list(set(paths))
 
     # download MODIS LAI over the same area and time
     print("Downloading MODIS data...")
@@ -418,6 +419,7 @@ def get_LAI(loc, start_date, end_date, earth_user, earth_pass, cloud, sat, cache
                                         output_df.iloc[i].upperLeftCornerLongitude,
                                         output_df.iloc[i].lowerRightCornerLatitude,
                                         output_df.iloc[i].lowerRightCornerLongitude, modisCacheDir)
+    tiles = list(set(tiles))
 
     get_modis_lai(tiles, MODIS_product, version, start_date, end_date,
                                 ("%s" % earth_user, "%s" % earth_pass), modisCacheDir)
